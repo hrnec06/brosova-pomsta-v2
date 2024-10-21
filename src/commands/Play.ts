@@ -39,12 +39,14 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 
     public async play(interaction: DiscordChatInteraction, query: string, playNow: boolean): Promise<boolean> {
         const voiceChannel = interaction.member.voice.channel;
+		  console.log(1);
         if (!voiceChannel) {
             const embed = this.client.getInteractionManager().generateErrorEmbed("Nejsi připojen do žádného kanálu!");
             interaction.reply({ embeds: [embed], ephemeral: true });
             return false;
         }
 
+		  console.log(2);
         const interactionChannel = interaction.channel;
         if (!interactionChannel) {
             const embed = this.client.getInteractionManager().generateErrorEmbed("Neplatný textový channel.");
@@ -52,16 +54,20 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
             return false;
         }
 
+		  console.log(3);
         await interaction.deferReply();
 
         try {
+				console.log(4);
             const videoID = await this.getVideoIDByQuery(query);
+				console.log(5);
             if (!videoID) {
                 const embed = this.client.getInteractionManager().generateErrorEmbed(`Video "${query}" nebylo nazeleno.`);
                 interaction.followUp({ embeds: [embed], ephemeral: true });
                 return false;
             }
 
+				console.log(6);
             const videoDetails = await this.getVideoDataByID(videoID);
 
             const queuedItem: QueuedVideo = {
@@ -83,9 +89,12 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
             session.setActiveVoiceChannel(voiceChannel);
             const result = await session.getQueue().pushToQueue(queuedItem, playNow, interaction);
 
+				console.log(7);
+
             interaction.followUp(`${videoDetails.title}: ${result}`);
 				return true;
         } catch (err) {
+				console.log(8);
             this.client.handleError(err, interaction);
             return false;
         }
