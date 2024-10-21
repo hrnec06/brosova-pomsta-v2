@@ -19,47 +19,48 @@ if (!GOOGLE_API_KEY) console.warn("GOOGLE_API_KEY is not defined in .env!");
 export const CONFIG_DIRECTORY = "config.json";
 
 (async () => {
-    console.log("Loading config...");
-    const config = await loadConfig();
+	console.log("Loading config...");
+	const config = await loadConfig();
 
-    const client = new MusicBot(
-        BOT_TOKEN,
-        CLIENT_ID,
-        config
-    );
+	const client = new MusicBot(
+		BOT_TOKEN,
+		CLIENT_ID,
+		config
+	);
 
-    process.on('unhandledRejection', (error) => {
-        const channel = client.getDefaultChannel();
+	process.on('unhandledRejection', (error) => {
+		const channel = client.getDefaultChannel();
 
-        if (!channel) {
-            console.error(error);
-            return;
-        }
+		if (!channel) {
+			console.error(error);
+			return;
+		}
 
-        const embed = client.getInteractionManager().generateErrorEmbed(error);
-        channel.send({ embeds: [embed] });
-    });
+		const embed = client.getInteractionManager().generateErrorEmbed(error);
+		channel.send({ embeds: [embed] });
+	});
 })()
 
 
 async function loadConfig(): Promise<MusicBotConfig> {
-    const DEFAULT_CONFIG: MusicBotConfig = {
-        banLion5: false,
-        test2: true,
-        test3: 'idk'
-    };
+	const DEFAULT_CONFIG: MusicBotConfig = {
+		banLion5: false,
+		test2: true,
+		test3: 'idk'
+	};
 
-    try {
-        const loadedConfig = JSON.parse((await fs.readFile(CONFIG_DIRECTORY, 'utf-8')).toString()) as MusicBotConfig;
-        const config = deepmerge(DEFAULT_CONFIG, loadedConfig);
+	try {
+		const loadedConfig = JSON.parse((await fs.readFile(CONFIG_DIRECTORY, 'utf-8')).toString()) as MusicBotConfig;
+		const config = deepmerge(DEFAULT_CONFIG, loadedConfig);
 
-        console.log(config);
+		console.log(config);
 
-        console.log("Config loaded!");
-        return config;
-    } catch (error) {
-        console.error("Config load failed.");
-    }
+		console.log("Config loaded!");
+		return config;
+	} catch (error) {
+		console.error(error);
+		console.error("Config load failed.");
+	}
 
-    return DEFAULT_CONFIG;
+	return DEFAULT_CONFIG;
 }
