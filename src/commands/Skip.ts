@@ -37,8 +37,13 @@ export default class SkipCommand extends DiscordCommand implements DiscordComman
 
 			var nextVideo: QueuedVideo | false;
 			if ((nextVideo = session.getQueue().playNext(interaction)) == false) {
+				const player = session.getPlayer();
+				if (!player) {
+					this.client.handleError(new Error('Player is not available!'), interaction);
+					return false;
+				}
 				if (session.youtubePlayer.isPlaying()) {
-					session.getPlayer().stop();
+					player.stop();
 					interaction.reply('Skipping and stop: ' + (session.getQueue().getActiveVideo()?.videoDetails.title ?? 'none'));
 				}
 				else {

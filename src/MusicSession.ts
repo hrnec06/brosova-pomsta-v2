@@ -6,7 +6,7 @@ import YoutubePlayer from './YoutubePlayer';
 import assert from 'assert';
 
 export default class MusicSession {
-	private player: AudioPlayer;
+	private player?: AudioPlayer;
 	private connection?: VoiceConnection;
 	private channel?: discord.VoiceBasedChannel;
 
@@ -20,22 +20,10 @@ export default class MusicSession {
 
 	constructor(
 		private client: MusicBot,
-		private id: string,
+		public id: string,
 		public guild: discord.Guild,
 		public interactionChannel: discord.TextBasedChannel
 	) {
-		this.player = createAudioPlayer({
-			behaviors: {
-				noSubscriber: NoSubscriberBehavior.Pause
-			}
-		});
-
-		this.player.on('stateChange', (old, newState) => {
-			if (newState.status === AudioPlayerStatus.Idle) {
-				this.youtubePlayer.handleEnd();
-			}
-		})
-
 		this.queue = new MusicQueue(this.client, this);
 		this.youtubePlayer = new YoutubePlayer(this.client, this);
 	}
@@ -59,12 +47,16 @@ export default class MusicSession {
 	public join(interaction?: DiscordInteraction) {
 		return new Promise<boolean>((resolve) => {
 			if (this.joining) {
-				return false;
+				return resolve(false);
 			}
 			this.joining = true;
 
 			try {
 				assert(this.channel != undefined, 'Cannot join channel because it\'s undefined.');
+
+				if (this.connection) {
+					this.connection.destroy();
+				}
 
 				const connection = joinVoiceChannel({
 					channelId: this.channel.id,
@@ -76,12 +68,27 @@ export default class MusicSession {
 
 				connection.on(VoiceConnectionStatus.Ready, () => {
 					this.joined = true;
+					this.joining = false;
 					resolve(true);
 				});
 
 				connection.on(VoiceConnectionStatus.Disconnected, () => {
 					this.joined = false;
 				})
+
+				this.player?.stop(true);
+
+				this.player = createAudioPlayer({
+					behaviors: {
+						noSubscriber: NoSubscriberBehavior.Pause
+					}
+				});
+		
+				this.player.on('stateChange', (old, newState) => {
+					if (newState.status === AudioPlayerStatus.Idle) {
+						this.youtubePlayer.handleEnd();
+					}
+				});
 
 				this.connection = connection;
 			} catch (err) {
@@ -94,8 +101,6 @@ export default class MusicSession {
 	public leave(force: boolean = false) {
 		if (!this.connection) throw 'Připojení není aktivní.';
 		this.connection.disconnect();
-		this.connection.destroy();
-		this.connection = undefined;
 	}
 	public getConnection() {
 		return this.connection;

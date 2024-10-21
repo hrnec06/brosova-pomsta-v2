@@ -95,6 +95,13 @@ export default class MusicBot {
 			this.registerCommands();
 		});
 
+		this.client.on('voiceStateUpdate', (oldState, newState) => {
+			if (!newState.channel && newState.member?.id === this.client.user?.id) {
+				this.handleDisconnect(oldState, newState);
+			}
+		});
+
+
 		this.client.on('error', (error) => this.handleError(error));
 		this.client.on('interactionCreate', async (interaction) => this.handleInteraction(interaction));
 	}
@@ -161,6 +168,18 @@ export default class MusicBot {
 		}
 	}
 
+	private handleDisconnect(oldState: discord.VoiceState, newState: discord.VoiceState) {
+		const guild = oldState.channel?.guild;
+		if (guild) {
+			const session = this.sessionManager.getSession(guild);
+
+			let result: boolean;
+			if (!session || !(result = this.sessionManager.destroySession(session)))
+				this.handleError(new Error('Session was not found therefore couldn\'t be deleted! Risking memory leak.'));
+		}
+		else
+			this.handleError(new Error('Guild was not provided therefore the session (if exists) was not found and deleted. Risking memory leak.'));
+	}
 
 	public getDefaultChannel() {
 		return this.defaultChannel;

@@ -37,7 +37,7 @@ export default class YoutubePlayer {
 
 		stream.on('error', (err) => {
 			this.playing = false;
-			this.session.getPlayer().stop();
+			this.session.getPlayer()?.stop();
 			this.client.handleError(err, interaction);
 		})
 
@@ -47,7 +47,12 @@ export default class YoutubePlayer {
 
 		const player = this.session.getPlayer();
 
-		player.play(res);
+		if (!player) {
+			this.client.handleError(new Error('Player is not available!'), interaction);
+			return;
+		}
+
+		player?.play(res);
 		conn.subscribe(player);
 
 		this.playing = true;

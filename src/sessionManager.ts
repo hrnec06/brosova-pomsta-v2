@@ -39,4 +39,11 @@ export default class SessionManager {
 
 		return session || null;
 	}
+
+	public destroySession(session: MusicSession) {
+		session.getPlayer()?.stop();
+		session.getConnection()?.destroy();
+
+		return delete this.sessions[session.id];
+	}
 }

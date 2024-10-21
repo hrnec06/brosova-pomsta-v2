@@ -16,6 +16,8 @@ export default class MusicQueue {
             await this.session.join(interaction);
         }
 
+		  console.log('Join 19');
+
         if (playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 2)) {
             this.position = this.queue.length - 1;
             this.session.youtubePlayer.play(video, interaction);

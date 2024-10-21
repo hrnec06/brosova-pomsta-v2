@@ -80,11 +80,15 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
                 }
             }
 
+				console.log(10);
+
             var session = this.client.getSessionManager().getSession(interaction.guild);
             if (!session) {
                 console.log("No session found.");
                 session = this.client.getSessionManager().createSession(interaction.guild, interaction.channel);
             }
+
+				console.log(9);
 
             session.setActiveVoiceChannel(voiceChannel);
             const result = await session.getQueue().pushToQueue(queuedItem, playNow, interaction);
