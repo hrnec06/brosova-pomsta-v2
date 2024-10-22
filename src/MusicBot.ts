@@ -13,6 +13,7 @@ import SkipCommand from './commands/Skip';
 import JoinCommand from './commands/Join';
 import StopComamnd from './commands/Stop';
 import LoopCommand from './commands/Loop';
+import YoutubeAPI from './api/YoutubeAPI';
 
 type MusicBotEvents = "load" | 'defaultChannelLoad' | 'buttonInteraction' | 'stringSelectInteraction';
 
@@ -32,6 +33,7 @@ export default class MusicBot {
 
 	private interactionManager: InteractionManager;
 	private sessionManager: SessionManager;
+	public youtubeAPI: YoutubeAPI;
 
 	public loopingDisabled: boolean = false;
 
@@ -42,10 +44,15 @@ export default class MusicBot {
 	constructor(
 		private BOT_TOKEN: string,
 		private CLIENT_ID: string,
-		public config: MusicBotConfig
+		public config: MusicBotConfig,
+		GOOGLE_API_KEY: string | undefined
 	) {
 		const BOT_LOAD_START = Date.now();
 		console.log("Loggin in...");
+
+		this.youtubeAPI = new YoutubeAPI(this, GOOGLE_API_KEY);
+
+		this.youtubeAPI.fetchVideosFromPlaylist('PLPfHaI9XqTnFzvCP_YHvVE6l8al2gdzvB').then(r => console.log(r));
 
 		this.client = this.createClient();
 		this.rest = this.createREST();

@@ -18,14 +18,15 @@ if (!GOOGLE_API_KEY) console.warn("GOOGLE_API_KEY is not defined in .env!");
 
 export const CONFIG_DIRECTORY = "config.json";
 
-(async () => {
+(async (BOT_TOKEN: string, CLIENT_ID: string, GOOGLE_API_KEY: string | undefined) => {
 	console.log("Loading config...");
 	const config = await loadConfig();
 
 	const client = new MusicBot(
 		BOT_TOKEN,
 		CLIENT_ID,
-		config
+		config,
+		GOOGLE_API_KEY
 	);
 
 	process.on('unhandledRejection', (error) => {
@@ -39,7 +40,11 @@ export const CONFIG_DIRECTORY = "config.json";
 		const embed = client.getInteractionManager().generateErrorEmbed(error);
 		channel.send({ embeds: [embed] });
 	});
-})()
+})(BOT_TOKEN, CLIENT_ID, GOOGLE_API_KEY)
+.catch((error) => {
+	console.error(error);
+	process.exit();
+});
 
 
 async function loadConfig(): Promise<MusicBotConfig> {

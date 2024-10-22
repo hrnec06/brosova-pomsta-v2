@@ -11,19 +11,19 @@ declare interface QueuedVideo {
     }
 }
 
-declare interface YoutubeSearchResponse {
+declare interface YoutubeSearchResponse<K> {
     etag: string,
-    items: Array<YoutubeSearchItem>,
+    items: Array<K>,
     kind: string,
     nextPageToken: string,
     pageInfo: {
         resultsPerPage: number,
         totalResults: number
     },
-    regionCode: string,
+    regionCode?: string,
 }
 
-declare interface YoutubeSearchItem {
+declare interface YoutubeVideoSearchItem {
     etag: string,
     id: {
         kind: string,
@@ -44,6 +44,16 @@ declare interface YoutubeSearchItem {
         },
         title: string
     }
+}
+
+declare interface YoutubePlaylistSearchItem {
+	contentDetails: {
+		videoId: string,
+		videoPublishedAt: string
+	},
+	etag: string,
+	id: string,
+	kind: string
 }
 
 declare interface YtdlAuthor {
