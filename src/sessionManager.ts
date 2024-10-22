@@ -11,7 +11,7 @@ export default class SessionManager {
 
 	}
 
-	public createSession(guild: discord.Guild, activationChannel: discord.TextBasedChannel): MusicSession {
+	public createSession(guild: discord.Guild, activationChannel: discord.SendableChannels): MusicSession {
 		if (this.getSession(guild)) throw 'Session již je na tomto serveru aktivní!';
 
 		const id = uuidv4();

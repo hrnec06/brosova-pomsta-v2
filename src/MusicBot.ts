@@ -14,6 +14,8 @@ import JoinCommand from './commands/Join';
 import StopComamnd from './commands/Stop';
 import LoopCommand from './commands/Loop';
 import YoutubeAPI from './api/YoutubeAPI';
+import DebugCommand from './commands/Debug';
+import assert from 'node:assert';
 
 type MusicBotEvents = "load" | 'defaultChannelLoad' | 'buttonInteraction' | 'stringSelectInteraction';
 
@@ -52,8 +54,6 @@ export default class MusicBot {
 
 		this.youtubeAPI = new YoutubeAPI(this, GOOGLE_API_KEY);
 
-		this.youtubeAPI.fetchVideosFromPlaylist('PLPfHaI9XqTnFzvCP_YHvVE6l8al2gdzvB').then(r => console.log(r));
-
 		this.client = this.createClient();
 		this.rest = this.createREST();
 
@@ -64,7 +64,8 @@ export default class MusicBot {
 			new SkipCommand(this),
 			new JoinCommand(this),
 			new StopComamnd(this),
-			new LoopCommand(this)
+			new LoopCommand(this),
+			new DebugCommand(this)
 			// new ConfigCommand(this)
 		];
 
@@ -103,8 +104,21 @@ export default class MusicBot {
 		});
 
 		this.client.on('voiceStateUpdate', (oldState, newState) => {
+			const session = this.sessionManager.getSession(newState.guild);
+			if (!session || !session.isJoined()) return;
+
 			if (!newState.channel && newState.member?.id === this.client.user?.id) {
 				this.handleDisconnect(oldState, newState);
+			}
+
+			if (!newState.channel && newState.member?.id !== this.client.user?.id) {
+				const voice = session.getVoiceChannel();
+				assert(voice != undefined, 'Voice channel is not defined.');
+
+				if (voice.members.size <= 1) {
+					// Start the countdown
+					session.setTerminationCountdown(5000);
+				}
 			}
 		});
 
@@ -156,7 +170,7 @@ export default class MusicBot {
 
 			var session = this.sessionManager.getSession(interaction);
 
-			if (await command.dispatch(interaction, session) && interaction.channel)
+			if (await command.dispatch(interaction, session) && interaction.channel?.isSendable())
 				(session || this.sessionManager.getSession(interaction))?.setInteractionChannel(interaction.channel);
 				
 		}

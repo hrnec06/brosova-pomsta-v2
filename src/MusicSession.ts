@@ -9,27 +9,47 @@ export default class MusicSession {
 	private player?: AudioPlayer;
 	private connection?: VoiceConnection;
 	private channel?: discord.VoiceBasedChannel;
+	public creationDate: Date;
 
 	private queue: MusicQueue;
 	public youtubePlayer: YoutubePlayer;
 
 	private joining: boolean = false;
 	private joined: boolean = false;
-
+	private terminationCountdown?: NodeJS.Timeout;
 	private looping: boolean = false;
 
 	constructor(
 		private client: MusicBot,
 		public id: string,
 		public guild: discord.Guild,
-		public interactionChannel: discord.TextBasedChannel
+		public interactionChannel: discord.SendableChannels
 	) {
 		this.queue = new MusicQueue(this.client, this);
 		this.youtubePlayer = new YoutubePlayer(this.client, this);
+
+		this.creationDate = new Date();
 	}
 
+	public setTerminationCountdown(time_ms: number) {
+		if (this.terminationCountdown) return;
+
+		this.terminationCountdown = setTimeout(() => {
+			console.log('Automatically destroying session..');
+			this.interactionChannel?.send('Opustili jste mě sráči, lívuju.');
+			this.client.getSessionManager().destroySession(this);
+		}, time_ms);
+	}
+	public cancelTerminationCountdown() {
+		if (this.terminationCountdown === undefined) return;
+
+		clearTimeout(this.terminationCountdown);
+		this.terminationCountdown = undefined;
+	}
 	public setInteractionChannel(channel: discord.TextBasedChannel) {
-		console.log("Interaction channel changed.");
+		if (!channel.isSendable())
+			throw 'Interaction channel is not sendable.';
+
 		this.interactionChannel = channel;
 	}
 	public setActiveVoiceChannel(channel: discord.VoiceBasedChannel) {
@@ -110,5 +130,8 @@ export default class MusicSession {
 	}
 	public setLooping(state: boolean) {
 		this.looping = state;
+	}
+	public getVoiceChannel() {
+		return this.channel;
 	}
 }

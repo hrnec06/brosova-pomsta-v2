@@ -4,8 +4,8 @@ import Utils from "./utils";
 import { v4 as uuidv4} from 'uuid';
 
 export default class MusicQueue {
-	private position: number = 0;
-	private queue: QueuedItem[] = [];
+	public position: number = 0;
+	public queue: QueuedItem[] = [];
 
 	constructor(private client: MusicBot, private session: MusicSession) {
 
