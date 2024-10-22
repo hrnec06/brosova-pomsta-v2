@@ -35,11 +35,12 @@ export default class MusicQueue {
 		return playNow;
 	}
 
-	public async playNext(interaction?: DiscordInteraction): Promise<QueuedVideo | false> {
+	public async playNext(interaction?: DiscordInteraction, skipPlaylist?: boolean): Promise<QueuedVideo | false> {
 		var nextVideo: QueuedVideo;
 
 		const activeItem = this.getActiveVideo();
-		if (activeItem && Utils.BotUtils.isPlaylistItem(activeItem) && activeItem.position < activeItem.videoList.length) {
+
+		if (activeItem != null && Utils.BotUtils.isPlaylistItem(activeItem) && activeItem.position < activeItem.videoList.length && skipPlaylist !== true) {
 			const videoInfo = await this.client.youtubeAPI.getVideoDataByID(activeItem.videoList[activeItem.position]);
 			activeItem.position += 1;
 
@@ -57,7 +58,6 @@ export default class MusicQueue {
 			this.position = newPos;
 
 			if (Utils.BotUtils.isPlaylistItem(nextItem)) {
-				console.log('playlist item');
 				return await this.playNext(interaction);
 			}
 			else if (Utils.BotUtils.isVideoItem(nextItem)) {

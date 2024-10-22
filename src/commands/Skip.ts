@@ -7,7 +7,12 @@ export default class SkipCommand extends DiscordCommand implements DiscordComman
 		super(
 			new SlashCommandBuilder()
 				.setName('skip')
-				.setDescription('Přeskočí video ve frontě.'),
+				.addBooleanOption(option => option
+					.setName('playlist')
+					.setDescription('Přeskočit celý playlist')
+					.setRequired(false)
+				)
+				.setDescription('Přeskočí video / playlist ve frontě.'),
 			'skip'
 		);
 	}
@@ -35,8 +40,10 @@ export default class SkipCommand extends DiscordCommand implements DiscordComman
 				return false;
 			}
 
+			const skipPlaylist = interaction.options.getBoolean('playlist', false) ?? false;
+
 			var nextVideo: QueuedVideo | false;
-			if ((nextVideo = await session.getQueue().playNext(interaction)) == false) {
+			if ((nextVideo = await session.getQueue().playNext(interaction, skipPlaylist)) == false) {
 				const player = session.getPlayer();
 				if (!player) {
 					this.client.handleError(new Error('Player is not available!'), interaction);

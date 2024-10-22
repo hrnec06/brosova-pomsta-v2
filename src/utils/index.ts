@@ -299,11 +299,11 @@ namespace Utils {
 		}
 
 		export function isPlaylistItem(item: QueuedItem): item is QueuedPlaylist {
-			return 'videoList' in item;
+			return item && 'videoList' in item;
 		}
 
 		export function isVideoItem(item: QueuedItem): item is QueuedVideo {
-			return 'videoDetails' in item;
+			return item && 'videoDetails' in item;
 		}
 	}
 }

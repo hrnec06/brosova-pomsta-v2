@@ -31,6 +31,10 @@ export default class SessionManager {
 		return this.sessions[id] || null;
 	}
 
+	public getSessionsAsArray(): MusicSession[] {
+		return Utils.values(this.sessions);
+	}
+
 	getSession(interaction: DiscordInteraction): MusicSession | null;
 	getSession(guild: discord.Guild): MusicSession | null;
 	public getSession(arg1: DiscordInteraction | discord.Guild) {
