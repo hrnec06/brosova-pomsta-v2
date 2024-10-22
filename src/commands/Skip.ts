@@ -11,7 +11,7 @@ export default class SkipCommand extends DiscordCommand implements DiscordComman
 			'skip'
 		);
 	}
-	public dispatch(interaction: DiscordChatInteraction) {
+	public async dispatch(interaction: DiscordChatInteraction) {
 		const voiceChannel = interaction.member.voice.channel;
 
 		if (!voiceChannel) {
@@ -36,7 +36,7 @@ export default class SkipCommand extends DiscordCommand implements DiscordComman
 			}
 
 			var nextVideo: QueuedVideo | false;
-			if ((nextVideo = session.getQueue().playNext(interaction)) == false) {
+			if ((nextVideo = await session.getQueue().playNext(interaction)) == false) {
 				const player = session.getPlayer();
 				if (!player) {
 					this.client.handleError(new Error('Player is not available!'), interaction);
@@ -44,7 +44,8 @@ export default class SkipCommand extends DiscordCommand implements DiscordComman
 				}
 				if (session.youtubePlayer.isPlaying()) {
 					player.stop();
-					interaction.reply('Skipping and stop: ' + (session.getQueue().getActiveVideo()?.videoDetails.title ?? 'none'));
+					// interaction.reply('Skipping and stop: ' + (session.getQueue().getActiveVideo()?.videoDetails.title ?? 'none'));
+					interaction.reply('Skipping and stop.');
 				}
 				else {
 					const embed = this.client.getInteractionManager().generateErrorEmbed("Ve frontě nejsou žádná další videa!");

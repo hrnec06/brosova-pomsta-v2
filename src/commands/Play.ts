@@ -56,47 +56,64 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 		await interaction.deferReply();
 
 		try {
-			if (this.client.youtubeAPI.isPlaylist(query)) {
-				// Is playlist
-				const id = this.client.youtubeAPI.getPlaylistIdFromURL(query);
-				if (!id)
-					throw new Error('Youtube playlist ID could not be parsed.');
-
-				const videos = await this.client.youtubeAPI.fetchVideosFromPlaylist(id);
-				console.log(videos);
-				
-				return true;
-			}
-
-			const videoID = await this.client.youtubeAPI.getVideoIDByQuery(query);
-			if (!videoID) {
-				console.log("No video found");
-				const embed = this.client.getInteractionManager().generateErrorEmbed(`Video "${query}" nebylo nazeleno.`);
-				interaction.followUp({ embeds: [embed], ephemeral: true });
-				return false;
-			}
-
-			const videoDetails = await this.client.youtubeAPI.getVideoDataByID(videoID);
-
-			const queuedItem: QueuedVideo = {
-				id: uuidv4(),
-				videoDetails: videoDetails,
-				user: {
-					id: interaction.user.id,
-					name: interaction.member?.user.username ?? interaction.user.displayName,
-					avatarURL: interaction.user.avatarURL() || undefined
-				}
-			}
-
 			var session = this.client.getSessionManager().getSession(interaction.guild);
 			if (!session) {
 				session = this.client.getSessionManager().createSession(interaction.guild, interaction.channel);
 			}
 
-			session.setActiveVoiceChannel(voiceChannel);
-			const result = await session.getQueue().pushToQueue(queuedItem, playNow, interaction);
+			var itemToQueue: QueuedItem;
+			if (this.client.youtubeAPI.isPlaylist(query)) {
+				// Is playlist
+				const id = this.client.youtubeAPI.getPlaylistIdFromURL(query);
+				if (!id)
+					throw new Error('Youtube playlist ID failed to parse.');
 
-			interaction.followUp(`${videoDetails.title}: ${result}`);
+				const videos = await this.client.youtubeAPI.fetchVideosFromPlaylist(id);
+				if (!videos.length) {
+					const embed = this.client.getInteractionManager().generateErrorEmbed(`Playlist neobsahuje žádná videa.`);
+					interaction.followUp({ embeds: [embed], ephemeral: true });
+					return false;
+				}
+
+				itemToQueue = {
+					id: uuidv4(),
+					position: 0,
+					user: {
+						id: interaction.user.id,
+						name: interaction.member?.user.username ?? interaction.user.displayName,
+						avatarURL: interaction.user.avatarURL() || undefined
+					},
+					videoList: videos
+				} as QueuedPlaylist;
+
+				// const result = await session.getQueue().pushToQueue(queuedPlaylist, playNow, interaction);
+			} else {
+				const videoID = await this.client.youtubeAPI.getVideoIDByQuery(query);
+
+				if (!videoID) {
+					console.log("No video found");
+					const embed = this.client.getInteractionManager().generateErrorEmbed(`Video "${query}" nebylo nazeleno.`);
+					interaction.followUp({ embeds: [embed], ephemeral: true });
+					return false;
+				}
+
+				const videoDetails = await this.client.youtubeAPI.getVideoDataByID(videoID);
+				itemToQueue = {
+					id: uuidv4(),
+					videoDetails: videoDetails,
+					user: {
+						id: interaction.user.id,
+						name: interaction.member?.user.username ?? interaction.user.displayName,
+						avatarURL: interaction.user.avatarURL() || undefined
+					}
+				} as QueuedVideo;
+			}
+
+			session.setActiveVoiceChannel(voiceChannel);
+			const result = await session.getQueue().pushToQueue(itemToQueue, playNow, interaction);
+
+			const title = Utils.BotUtils.isPlaylistItem(itemToQueue) ? itemToQueue.id : (itemToQueue as QueuedVideo).videoDetails.title;
+			interaction.followUp(`${title}: ${result}`);
 			return true;
 		} catch (err) {
 			this.client.handleError(err, interaction);

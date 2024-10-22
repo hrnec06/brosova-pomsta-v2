@@ -1,14 +1,23 @@
 declare type DiscordInteraction = import('discord.js').Interaction<CacheType>;
 declare type DiscordChatInteraction = import('discord.js').ChatInputCommandInteraction<discord.CacheType>;
 
-declare interface QueuedVideo {
-    id: string,
+declare interface QueuedVideo extends QueuedItem {
     videoDetails: YtdlInfo,
-    user: {
-        id: string,
-        name: string,
-        avatarURL?: string
-    }
+}
+
+declare interface QueuedPlaylist extends QueuedItem {
+	videoList: string[],
+	position: number,
+}
+
+// declare type QueuedItem = QueuedVideo | QueuedPlaylist;
+interface QueuedItem {
+	id: string,
+	user: {
+		id: string,
+		name: string,
+		avatarURL?: string
+	}
 }
 
 declare interface YoutubeSearchResponse<K> {

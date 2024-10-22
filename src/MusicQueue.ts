@@ -1,44 +1,79 @@
 import MusicBot from "./MusicBot";
 import MusicSession from "./MusicSession";
+import Utils from "./utils";
+import { v4 as uuidv4} from 'uuid';
 
 export default class MusicQueue {
-    private position: number = 0;
-    private queue: QueuedVideo[] = [];
+	private position: number = 0;
+	private queue: QueuedItem[] = [];
 
-    constructor(private client: MusicBot, private session: MusicSession) {
+	constructor(private client: MusicBot, private session: MusicSession) {
 
-    }
+	}
 
-    public async pushToQueue(video: QueuedVideo, playNow: boolean, interaction: DiscordInteraction) {
-        this.queue.push(video);
+	public async pushToQueue(video: QueuedItem, playNow: boolean, interaction: DiscordInteraction) {
+		this.queue.push(video);
 
-        if (!this.session.isJoined()) {
-            await this.session.join(interaction);
-        }
+		if (!this.session.isJoined()) {
+			await this.session.join(interaction);
+		}
 
-		  console.log('Join 19');
+		if (playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 2)) {
+			this.position = this.queue.length - 1;
+			if (Utils.BotUtils.isPlaylistItem(video)) {
+				console.log('PLAY PLAYLIST');
+				this.playNext(interaction);
+			}
+			else if (Utils.BotUtils.isVideoItem(video)) {
+				console.log('PLAY VIDEO');
+				this.session.youtubePlayer.play(video, interaction);
+			}
+			else
+				throw new Error('Invalid queue item.');
+		}
 
-        if (playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 2)) {
-            this.position = this.queue.length - 1;
-            this.session.youtubePlayer.play(video, interaction);
-        }
+		return playNow;
+	}
 
-        return playNow;
-    }
+	public async playNext(interaction?: DiscordInteraction): Promise<QueuedVideo | false> {
+		var nextVideo: QueuedVideo;
 
-    public playNext(interaction?: DiscordInteraction) {
-        const newPos = this.position + 1;
-        if (newPos > this.queue.length - 1) return false;
+		const activeItem = this.getActiveVideo();
+		if (activeItem && Utils.BotUtils.isPlaylistItem(activeItem) && activeItem.position < activeItem.videoList.length) {
+			const videoInfo = await this.client.youtubeAPI.getVideoDataByID(activeItem.videoList[activeItem.position]);
+			activeItem.position += 1;
 
-        const nextVideo = this.queue[newPos];
-        if (!nextVideo) return false;
+			nextVideo = {
+				id: uuidv4(),
+				user: activeItem.user,
+				videoDetails: videoInfo
+			}
+		}
+		else {
+			const newPos = this.position + 1;
+			if (newPos > this.queue.length - 1) return false;
 
-        this.position = newPos;
-        this.session.youtubePlayer.play(nextVideo, interaction);
-		  return nextVideo;
-    }
+			const nextItem = this.queue[newPos];
+			this.position = newPos;
 
-	 public getActiveVideo(): QueuedVideo | null {
+			if (Utils.BotUtils.isPlaylistItem(nextItem)) {
+				console.log('playlist item');
+				return await this.playNext(interaction);
+			}
+			else if (Utils.BotUtils.isVideoItem(nextItem)) {
+				nextVideo = nextItem;
+			}
+			else
+				throw new Error('Invalid queue item.');
+		}
+
+		if (!nextVideo) return false;
+		this.session.youtubePlayer.play(nextVideo, interaction);
+
+		return nextVideo;
+	}
+
+	public getActiveVideo(): QueuedItem | null {
 		return this.queue[this.position] ?? null;
-	 }
+	}
 }

@@ -55,9 +55,10 @@ export default class YoutubeAPI {
 		const response = await fetch(URL);
 		const result = (await response.json() as YoutubeSearchResponse<YoutubePlaylistSearchItem>);
 
-		if (!result) throw new Error('Youtube API returned an invalid response.');
+		if (!result || !result.items) throw new Error('Youtube API returned an invalid response.');
 
-		return result;
+		const videos = result.items.map(item => item.contentDetails.videoId);
+		return videos;
 	}
 
 	public async getVideoIDByQuery(query: string) {

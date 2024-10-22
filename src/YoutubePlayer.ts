@@ -52,7 +52,7 @@ export default class YoutubePlayer {
 			return;
 		}
 
-		player?.play(res);
+		player.play(res);
 		conn.subscribe(player);
 
 		this.playing = true;
@@ -61,7 +61,8 @@ export default class YoutubePlayer {
 	public handleEnd(forced: boolean = false) {
 		if (this.session.isLooping()) {
 			const activeVideo = this.session.getQueue().getActiveVideo();
-			activeVideo && this.play(activeVideo);
+			// activeVideo && this.play(activeVideo);
+			throw 'handleEnd function failed to loop a video.';
 			return;
 		}
 		this.playing = false;
