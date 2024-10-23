@@ -34,6 +34,9 @@ export default class Log {
 		}
 		else
 			this.error = true;
+
+		this.write('ERROR', 'data', [1, 2, 3], false, {'d': true});
+		this.write('ERROR', 'data', [1, 2, 3], false, {'d': true});
 	}
 
 	private openLogFile() {
