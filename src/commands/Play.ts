@@ -34,6 +34,8 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 		const query = interaction.options.getString("video", true);
 		const playNow = interaction.options.getBoolean("hned", false) ?? false;
 
+		this.client.log.write('Play command: ', query, playNow, interaction.user.displayName);
+
 		return await this.play(interaction, query, playNow);
 	}
 
@@ -59,11 +61,14 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 			var session = this.client.getSessionManager().getSession(interaction.guild);
 			if (!session) {
 				session = this.client.getSessionManager().createSession(interaction.guild, interaction.channel);
+				this.client.log.write('Create session: ', interaction.user.displayName);
 			}
 
 			var itemToQueue: QueuedItem;
 			if (this.client.youtubeAPI.isPlaylist(query)) {
 				// Is playlist
+				this.client.log.write('Query is playlist: ', true);
+
 				const id = this.client.youtubeAPI.getPlaylistIdFromURL(query);
 				if (!id)
 					throw new Error('Youtube playlist ID failed to parse.');

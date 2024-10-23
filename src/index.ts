@@ -24,6 +24,10 @@ export const CONFIG_DIRECTORY = "config.json";
 	process.on('unhandledRejection', (error) => {
 		client.handleError(error);
 	});
+
+	process.stdin.on('data', (e) => {
+		console.log(e.toString());
+	})
 })(BOT_TOKEN, CLIENT_ID, GOOGLE_API_KEY)
 .catch((error) => {
 	console.error(error);

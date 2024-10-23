@@ -17,6 +17,7 @@ import YoutubeAPI from './api/YoutubeAPI';
 import DebugCommand from './commands/Debug';
 import assert from 'node:assert';
 import BotConfig, { IBotConfig } from './BotConfig';
+import Log from './Log';
 
 type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'configLoad';
 
@@ -35,12 +36,13 @@ export default class MusicBot {
 	private interactionManager: InteractionManager;
 	private sessionManager: SessionManager;
 	public youtubeAPI: YoutubeAPI;
+	public log: Log;
 
 	public loopingDisabled: boolean = false;
 
 	private eventListners: Partial<Record<MusicBotEvents, ((value: any) => void)[]>> = {};
 
-	private readonly botConfig: BotConfig;
+	public readonly config: BotConfig;
 
 	constructor(
 		private BOT_TOKEN: string,
@@ -51,11 +53,12 @@ export default class MusicBot {
 		console.log("Loggin in...");
 
 		this.youtubeAPI = new YoutubeAPI(this, GOOGLE_API_KEY);
+		this.config = new BotConfig(this);
+		this.log = new Log(this);
 
 		this.client = this.createClient();
 		this.rest = this.createREST();
 
-		this.botConfig = new BotConfig(this);
 
 		this.commands = [
 			new PingCommand(this),
@@ -84,7 +87,7 @@ export default class MusicBot {
 			}
 
 			this.registerCommands();
-			this.botConfig.getConfigAsync(() => this.botConfig.loadDeveloperTools());
+			this.config.getConfigAsync(() => this.config.loadDeveloperTools());
 		});
 
 		this.client.on('voiceStateUpdate', (oldState, newState) => {
@@ -245,8 +248,8 @@ export default class MusicBot {
 		else if (interaction && interaction.channel && interaction.channel.isSendable()) {
 			interaction.channel.send({ embeds: [embed] });
 		}
-		else if (this.botConfig.developerChannel) {
-			this.botConfig.developerChannel.send({ embeds: [embed] });
+		else if (this.config.developerChannel) {
+			this.config.developerChannel.send({ embeds: [embed] });
 		}
 		else {
 			console.error(error);

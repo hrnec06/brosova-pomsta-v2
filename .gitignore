@@ -4,3 +4,4 @@ package-lock.json
 last-commands.json
 dist/
 bot-config.json
+logs/
