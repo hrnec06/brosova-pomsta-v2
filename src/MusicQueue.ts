@@ -15,22 +15,23 @@ export default class MusicQueue {
 		this.queue.push(video);
 
 		if (!this.session.isJoined()) {
-			await this.session.join(interaction);
+			const r = await this.session.join(interaction);
+			if (!r) throw 'Bot nelze připojit na server.';
 		}
 
 		if (playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 2)) {
 			this.position = this.queue.length - 1;
 			if (Utils.BotUtils.isPlaylistItem(video)) {
-				this.playNext(interaction);
+				return await this.playNext(interaction) !== false;
 			}
 			else if (Utils.BotUtils.isVideoItem(video)) {
-				this.session.youtubePlayer.play(video, interaction);
+				await this.session.youtubePlayer.play(video, interaction);
 			}
 			else
 				throw new Error('Invalid queue item.');
 		}
 
-		return playNow;
+		return true;
 	}
 
 	public async playNext(interaction?: DiscordInteraction, skipPlaylist?: boolean): Promise<QueuedVideo | false> {

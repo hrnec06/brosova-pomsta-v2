@@ -33,6 +33,12 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 				session = this.client.getSessionManager().createSession(interaction.guild, interaction.channel);
 			}
 
+			if (voiceChannel.id == session.getVoiceChannel()?.id) {
+				const embed = this.client.getInteractionManager().generateErrorEmbed("Bot už již je připojen.");
+				interaction.reply({ embeds: [embed], ephemeral: true });
+				return false;
+			}
+
 			if (session.isJoined()) {
 				session.leave(true);
 				// MARK: PAUSE

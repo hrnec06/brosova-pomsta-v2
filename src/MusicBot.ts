@@ -84,14 +84,13 @@ export default class MusicBot {
 			}
 
 			this.registerCommands();
+			this.botConfig.getConfigAsync(() => this.botConfig.loadDeveloperTools());
 		});
 
 		this.client.on('voiceStateUpdate', (oldState, newState) => {
 			const session = this.sessionManager.getSession(newState.guild);
-			if (!session || !session.isJoined()) {
-				console.log('No session');
+			if (!session || !session.isJoined())
 				return;
-			}
 			
 			const isBot = newState.member?.id === this.client.user?.id;
 			const isLeave = oldState.channel != null && newState.channel == null;

@@ -157,27 +157,6 @@ export default class BotConfig {
 
 		console.log('Configration file successfully loaded!\n');
 
-		const developerChannel = this.client.client.channels.cache.get(config.system.developerChannelID);
-		if (!developerChannel) {
-			console.warn(`Developer channel ID ${config.system.developerChannelID} wasn't found.`);
-		}
-		else if (!developerChannel.isSendable()) {
-			console.warn(`Specified developer channel is not sendable.`);
-		}
-		else {
-			this.developerChannel = developerChannel;
-		}
-
-		this.developerGuild = this.client.client.guilds.cache.get(config.system.developerGuildID);
-		if (!this.developerGuild) {
-			console.warn(`Developer guild ID ${config.system.developerGuildID} wasn't found.`);
-		}
-
-		this.developerUser = this.client.client.users.cache.get(config.system.developerUserID);
-		if (!this.developerUser) {
-			console.warn(`Developer user ID ${config.system.developerGuildID} wasn't found.`);
-		}
-
 		return config;
 	}
 
@@ -206,5 +185,28 @@ export default class BotConfig {
 
 	public getConfig(): IBotConfig {
 		return this.config;
+	}
+
+	public loadDeveloperTools() {
+		const developerChannel = this.client.client.channels.cache.get(this.config.system.developerChannelID);
+		if (!developerChannel) {
+			console.warn(`Developer channel ID ${this.config.system.developerChannelID} wasn't found.`);
+		}
+		else if (!developerChannel.isSendable()) {
+			console.warn(`Specified developer channel is not sendable.`);
+		}
+		else {
+			this.developerChannel = developerChannel;
+		}
+
+		this.developerGuild = this.client.client.guilds.cache.get(this.config.system.developerGuildID);
+		if (!this.developerGuild) {
+			console.warn(`Developer guild ID ${this.config.system.developerGuildID} wasn't found.`);
+		}
+
+		this.developerUser = this.client.client.users.cache.get(this.config.system.developerUserID);
+		if (!this.developerUser) {
+			console.warn(`Developer user ID ${this.config.system.developerGuildID} wasn't found.`);
+		}
 	}
 }
