@@ -21,11 +21,9 @@ export default class MusicQueue {
 		if (playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 2)) {
 			this.position = this.queue.length - 1;
 			if (Utils.BotUtils.isPlaylistItem(video)) {
-				console.log('PLAY PLAYLIST');
 				this.playNext(interaction);
 			}
 			else if (Utils.BotUtils.isVideoItem(video)) {
-				console.log('PLAY VIDEO');
 				this.session.youtubePlayer.play(video, interaction);
 			}
 			else
@@ -75,5 +73,9 @@ export default class MusicQueue {
 
 	public getActiveVideo(): QueuedItem | null {
 		return this.queue[this.position] ?? null;
+	}
+
+	public async clear() {
+
 	}
 }

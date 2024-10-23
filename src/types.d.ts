@@ -7,54 +7,54 @@ declare interface UserDetails {
 declare type DiscordInteraction = import('discord.js').Interaction<CacheType>;
 declare type DiscordChatInteraction = import('discord.js').ChatInputCommandInteraction<discord.CacheType>;
 
-declare interface QueuedVideo extends QueuedItem {
-    videoDetails: YtdlInfo,
-}
-
-declare interface QueuedPlaylist extends QueuedItem {
-	videoList: string[],
-	position: number,
-}
-
-// declare type QueuedItem = QueuedVideo | QueuedPlaylist;
-interface QueuedItem {
+declare interface QueuedVideo {
+	videoDetails: YtdlInfo,
 	id: string,
 	user: UserDetails
 }
 
+declare interface QueuedPlaylist {
+	videoList: string[],
+	position: number,
+	user: UserDetails,
+	id: string,
+}
+
+type QueuedItem = QueuedVideo | QueuedPlaylist;
+
 declare interface YoutubeSearchResponse<K> {
-    etag: string,
-    items: Array<K>,
-    kind: string,
-    nextPageToken: string,
-    pageInfo: {
-        resultsPerPage: number,
-        totalResults: number
-    },
-    regionCode?: string,
+	etag: string,
+	items: Array<K>,
+	kind: string,
+	nextPageToken: string,
+	pageInfo: {
+		resultsPerPage: number,
+		totalResults: number
+	},
+	regionCode?: string,
 }
 
 declare interface YoutubeVideoSearchItem {
-    etag: string,
-    id: {
-        kind: string,
-        videoId: string
-    },
-    kind: string,
-    snippet: {
-        channelId: string,
-        channelTitle: string,
-        description: string | undefined,
-        liveBroadcastContent: string,
-        publishedAt: string,
-        publishTime: string,
-        thumbnails: {
-            default: YtdThumbnailData,
-            high: YtdThumbnailData,
-            medium: YtdThumbnailData
-        },
-        title: string
-    }
+	etag: string,
+	id: {
+		kind: string,
+		videoId: string
+	},
+	kind: string,
+	snippet: {
+		channelId: string,
+		channelTitle: string,
+		description: string | undefined,
+		liveBroadcastContent: string,
+		publishedAt: string,
+		publishTime: string,
+		thumbnails: {
+			default: YtdThumbnailData,
+			high: YtdThumbnailData,
+			medium: YtdThumbnailData
+		},
+		title: string
+	}
 }
 
 declare interface YoutubePlaylistSearchItem {
@@ -68,17 +68,17 @@ declare interface YoutubePlaylistSearchItem {
 }
 
 declare interface YtdlAuthor {
-    name: string,
-    url: string,
-    avatar?: string
+	name: string,
+	url: string,
+	avatar?: string
 }
 
 declare interface YtdlInfo {
-    videoId: string,
-    title: string,
-    // Needs parse
-    length: number,
-    thumbnail: string,
-    author: YtdlAuthor,
-    uploadDate: string,
+	videoId: string,
+	title: string,
+	// Needs parse
+	length: number,
+	thumbnail: string,
+	author: YtdlAuthor,
+	uploadDate: string,
 }

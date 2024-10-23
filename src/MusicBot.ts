@@ -88,20 +88,31 @@ export default class MusicBot {
 
 		this.client.on('voiceStateUpdate', (oldState, newState) => {
 			const session = this.sessionManager.getSession(newState.guild);
-			if (!session || !session.isJoined()) return;
-
-			if (!newState.channel && newState.member?.id === this.client.user?.id) {
-				this.handleDisconnect(oldState, newState);
+			if (!session || !session.isJoined()) {
+				console.log('No session');
+				return;
 			}
+			
+			const isBot = newState.member?.id === this.client.user?.id;
+			const isLeave = oldState.channel != null && newState.channel == null;
 
-			if (!newState.channel && newState.member?.id !== this.client.user?.id) {
+			if (isLeave && isBot)
+				this.handleDisconnect(oldState, newState);
+
+			if (!isLeave && !isBot) {
 				const voice = session.getVoiceChannel();
 				assert(voice != undefined, 'Voice channel is not defined.');
 
-				if (voice.members.size <= 1) {
-					// Start the countdown
+				if (voice.members.size > 1)
+					session.cancelTerminationCountdown();
+			}
+
+			if (isLeave && !isBot) {
+				const voice = session.getVoiceChannel();
+				assert(voice != undefined, 'Voice channel is not defined.');
+
+				if (voice.members.size <= 1)
 					session.setTerminationCountdown(5000);
-				}
 			}
 		});
 

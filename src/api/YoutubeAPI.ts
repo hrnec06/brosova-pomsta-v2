@@ -9,7 +9,7 @@ export default class YoutubeAPI {
 	public async getVideoDataByID(id: string) {
 		const videoInfo = await ytdl.getInfo(id);
 
-		const thumbnail = videoInfo.videoDetails.videoId;
+		const thumbnail = videoInfo.videoDetails.thumbnails[videoInfo.videoDetails.thumbnails.length - 1].url;
 		const authorAvatar = videoInfo.videoDetails.author.thumbnails != undefined ? videoInfo.videoDetails.author.thumbnails[videoInfo.videoDetails.author.thumbnails.length - 1].url : undefined;
 
 		const response: YtdlInfo = {

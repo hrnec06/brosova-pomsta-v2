@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import Utils from "../utils";
@@ -110,10 +110,18 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 			}
 
 			session.setActiveVoiceChannel(voiceChannel);
-			const result = await session.getQueue().pushToQueue(itemToQueue, playNow, interaction);
+			await session.getQueue().pushToQueue(itemToQueue, playNow, interaction);
 
-			const title = Utils.BotUtils.isPlaylistItem(itemToQueue) ? itemToQueue.id : (itemToQueue as QueuedVideo).videoDetails.title;
-			interaction.followUp(`${title}: ${result}`);
+			var embed: EmbedBuilder;
+			if (Utils.BotUtils.isVideoItem(itemToQueue)) {
+				embed = this.client.getInteractionManager().generateVideoEmbed(itemToQueue) as EmbedBuilder;
+			}
+			else {
+				embed = this.client.getInteractionManager().generatePlaylistEmbed(itemToQueue) as EmbedBuilder;
+			}
+
+			interaction.followUp({embeds: [embed]});
+
 			return true;
 		} catch (err) {
 			this.client.handleError(err, interaction);

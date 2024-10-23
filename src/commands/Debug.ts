@@ -45,7 +45,13 @@ export default class DebugCommand extends DiscordCommand implements DiscordComma
 				})
 
 				const code = codeBlock('json', JSON.stringify(sessions, undefined, '\t'));
-				interaction.reply(code);
+
+				if (code.length > 2000) {
+					console.log(code);
+					interaction.reply('Message too long, response sent to console.');
+				}
+				else
+					interaction.reply(code);
 				break;
 			}
 			default: {

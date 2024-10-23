@@ -35,7 +35,7 @@ export default class MusicSession {
 		if (this.terminationCountdown) return;
 
 		this.terminationCountdown = setTimeout(() => {
-			console.log('Automatically destroying session..');
+			console.log('Automatically destroying session.');
 			this.interactionChannel?.send('Opustili jste mě sráči, lívuju.');
 			this.client.getSessionManager().destroySession(this);
 		}, time_ms);
@@ -74,9 +74,8 @@ export default class MusicSession {
 			try {
 				assert(this.channel != undefined, 'Cannot join channel because it\'s undefined.');
 
-				if (this.connection) {
-					this.connection.destroy();
-				}
+				this.connection?.destroy();
+				this.player?.stop(true);
 
 				const connection = joinVoiceChannel({
 					channelId: this.channel.id,
@@ -95,8 +94,6 @@ export default class MusicSession {
 				connection.on(VoiceConnectionStatus.Disconnected, () => {
 					this.joined = false;
 				})
-
-				this.player?.stop(true);
 
 				this.player = createAudioPlayer({
 					behaviors: {
