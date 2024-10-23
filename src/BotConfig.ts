@@ -17,7 +17,8 @@ interface IBotConfigSystem {
 	developerChannelID: string,
 	developerUserID: string,
 	developerGuildID: string,
-	errorLogging: boolean
+	errorLogging: boolean,
+	debugLogging: boolean
 }
 
 interface IBotConfigBannedItem {
@@ -171,7 +172,8 @@ export default class BotConfig {
 				developerChannelID: '1292190183646564363',
 				developerUserID: '470952100726308864',
 				developerGuildID: '1071785981923053588',
-				errorLogging: true
+				errorLogging: true,
+				debugLogging: true
 			}
 		}
 	}

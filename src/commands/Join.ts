@@ -14,6 +14,8 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 	public async dispatch(interaction: DiscordChatInteraction) {
 		const voiceChannel = interaction.member.voice.channel;
 
+		this.client.log.write('Join command: ', interaction.user.displayName);
+
 		if (!voiceChannel) {
 			const embed = this.client.getInteractionManager().generateErrorEmbed("Nejsi připojen do žádného kanálu!");
 			interaction.reply({ embeds: [embed], ephemeral: true });
@@ -31,6 +33,7 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 			let session = this.client.getSessionManager().getSession(interaction);
 			if (!session) {
 				session = this.client.getSessionManager().createSession(interaction.guild, interaction.channel);
+				this.client.log.write('Creating session: ', interaction.user.displayName);
 			}
 
 			if (voiceChannel.id == session.getVoiceChannel()?.id) {
@@ -46,6 +49,8 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 
 			session.setActiveVoiceChannel(voiceChannel);
 			const r = await session.join(interaction);
+
+			this.client.log.write('Join result: ', r);
 
 			if (!r) {
 				this.client.handleError("Bot nelze připojit, zkuste to později.", interaction);
