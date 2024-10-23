@@ -1,9 +1,5 @@
-import { generateDependencyReport } from '@discordjs/voice';
 import MusicBot from './MusicBot';
 import dotenv from 'dotenv';
-import discord from 'discord.js';
-import fs from 'fs/promises';
-import deepmerge from 'deepmerge';
 
 dotenv.config();
 
@@ -19,53 +15,17 @@ if (!GOOGLE_API_KEY) console.warn("GOOGLE_API_KEY is not defined in .env!");
 export const CONFIG_DIRECTORY = "config.json";
 
 (async (BOT_TOKEN: string, CLIENT_ID: string, GOOGLE_API_KEY: string | undefined) => {
-	console.log("Loading config...");
-	const config = await loadConfig();
-
 	const client = new MusicBot(
 		BOT_TOKEN,
 		CLIENT_ID,
-		config,
 		GOOGLE_API_KEY
 	);
 
 	process.on('unhandledRejection', (error) => {
-		const channel = client.getDefaultChannel();
-
-		if (!channel) {
-			console.error(error);
-			return;
-		}
-
-		const embed = client.getInteractionManager().generateErrorEmbed(error);
-		channel.send({ embeds: [embed] });
+		client.handleError(error);
 	});
 })(BOT_TOKEN, CLIENT_ID, GOOGLE_API_KEY)
 .catch((error) => {
 	console.error(error);
 	process.exit();
 });
-
-
-async function loadConfig(): Promise<MusicBotConfig> {
-	const DEFAULT_CONFIG: MusicBotConfig = {
-		banLion5: false,
-		test2: true,
-		test3: 'idk'
-	};
-
-	try {
-		const loadedConfig = JSON.parse((await fs.readFile(CONFIG_DIRECTORY, 'utf-8')).toString()) as MusicBotConfig;
-		const config = deepmerge(DEFAULT_CONFIG, loadedConfig);
-
-		console.log(config);
-
-		console.log("Config loaded!");
-		return config;
-	} catch (error) {
-		console.error(error);
-		console.error("Config load failed.");
-	}
-
-	return DEFAULT_CONFIG;
-}

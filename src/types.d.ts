@@ -1,3 +1,9 @@
+declare interface UserDetails {
+	id: string,
+	name: string,
+	avatarURL?: string
+}
+
 declare type DiscordInteraction = import('discord.js').Interaction<CacheType>;
 declare type DiscordChatInteraction = import('discord.js').ChatInputCommandInteraction<discord.CacheType>;
 
@@ -13,11 +19,7 @@ declare interface QueuedPlaylist extends QueuedItem {
 // declare type QueuedItem = QueuedVideo | QueuedPlaylist;
 interface QueuedItem {
 	id: string,
-	user: {
-		id: string,
-		name: string,
-		avatarURL?: string
-	}
+	user: UserDetails
 }
 
 declare interface YoutubeSearchResponse<K> {
@@ -79,8 +81,4 @@ declare interface YtdlInfo {
     thumbnail: string,
     author: YtdlAuthor,
     uploadDate: string,
-}
-
-declare interface MusicBotConfig extends Partial<Record<string, boolean | string>> {
-    banLion5: boolean
 }

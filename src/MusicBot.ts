@@ -16,22 +16,21 @@ import LoopCommand from './commands/Loop';
 import YoutubeAPI from './api/YoutubeAPI';
 import DebugCommand from './commands/Debug';
 import assert from 'node:assert';
+import BotConfig, { IBotConfig } from './BotConfig';
 
-type MusicBotEvents = "load" | 'defaultChannelLoad' | 'buttonInteraction' | 'stringSelectInteraction';
+type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'configLoad';
 
 interface MusicBotEventsMap extends Record<MusicBotEvents, any> {
 	'load': discord.Client,
-	'defaultChannelLoad': discord.Channel,
+	'configLoad': IBotConfig,
 	'buttonInteraction': discord.ButtonInteraction<discord.CacheType>,
 	'stringSelectInteraction': discord.StringSelectMenuInteraction<discord.CacheType>
 }
 
 export default class MusicBot {
-	private client: discord.Client;
+	public client: discord.Client;
 	private rest: discord.REST;
 	private commands: (DiscordCommand & DiscordCommandInterface)[];
-
-	private defaultChannel?: discord.SendableChannels;
 
 	private interactionManager: InteractionManager;
 	private sessionManager: SessionManager;
@@ -41,12 +40,11 @@ export default class MusicBot {
 
 	private eventListners: Partial<Record<MusicBotEvents, ((value: any) => void)[]>> = {};
 
-	private readonly CONFIG_DIRECTORY: string = "config.json";
+	private readonly botConfig: BotConfig;
 
 	constructor(
 		private BOT_TOKEN: string,
 		private CLIENT_ID: string,
-		public config: MusicBotConfig,
 		GOOGLE_API_KEY: string | undefined
 	) {
 		const BOT_LOAD_START = Date.now();
@@ -56,6 +54,8 @@ export default class MusicBot {
 
 		this.client = this.createClient();
 		this.rest = this.createREST();
+
+		this.botConfig = new BotConfig(this);
 
 		this.commands = [
 			new PingCommand(this),
@@ -77,24 +77,7 @@ export default class MusicBot {
 			console.log(`\n\nBot logged-in as ${this.client.user?.username} after ${((Date.now() - BOT_LOAD_START) / 1000).toFixed(2)}s.`);
 
 			try {
-				this.client.user?.setActivity('Interstellar > anime', { type: discord.ActivityType.Custom });
-
-				const DEVELOPER_CHANNEL_ID = process.env.DEVELOPER_CHANNEL_ID;
-				if (DEVELOPER_CHANNEL_ID) {
-					const channel = await this.client.channels.fetch(DEVELOPER_CHANNEL_ID);
-					if (channel) {
-						if (channel.isSendable()) {
-							this.defaultChannel = channel;
-							this.emit('defaultChannelLoad', channel);
-						}
-						else {
-							console.error(`Can't use channel ID ${DEVELOPER_CHANNEL_ID}, bot can't send messages in it.`);
-						}
-					}
-					else {
-						console.error(`Channel ID ${DEVELOPER_CHANNEL_ID} wasn't found.`);
-					}
-				}
+				this.client.user?.setActivity('yOuR pHOnE liNgiNg', { type: discord.ActivityType.Custom });
 			} catch (err) {
 				console.error('An error occured while loading the bot.');
 				console.error(err);
@@ -202,10 +185,6 @@ export default class MusicBot {
 			this.handleError(new Error('Guild was not provided therefore the session (if exists) was not found and deleted. Risking memory leak.'));
 	}
 
-	public getDefaultChannel() {
-		return this.defaultChannel;
-	}
-
 	private async registerCommands() {
 		const parsedCommands = this.commands.map(command => command.getCommand());
 		const stringifiedCommands = JSON.stringify(parsedCommands);
@@ -244,11 +223,6 @@ export default class MusicBot {
 	}
 
 	public handleError(error: any, interaction?: DiscordInteraction) {
-		if (!this.defaultChannel) {
-			console.error(error);
-			return;
-		}
-
 		const embed = this.interactionManager.generateErrorEmbed(error, { interaction: interaction });
 
 		if (interaction && interaction.isRepliable() && !interaction.replied) {
@@ -261,8 +235,8 @@ export default class MusicBot {
 		else if (interaction && interaction.channel && interaction.channel.isSendable()) {
 			interaction.channel.send({ embeds: [embed] });
 		}
-		else if (this.defaultChannel && this.defaultChannel.isSendable()) {
-			this.defaultChannel.send({ embeds: [embed] });
+		else if (this.botConfig.developerChannel) {
+			this.botConfig.developerChannel.send({ embeds: [embed] });
 		}
 		else {
 			console.error(error);
