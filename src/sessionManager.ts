@@ -1,5 +1,5 @@
 import MusicBot from "./MusicBot";
-import discord from 'discord.js';
+import discord, { User } from 'discord.js';
 import MusicSession from "./MusicSession";
 import Utils from "./utils";
 import { v4 as uuidv4 } from 'uuid';
@@ -11,7 +11,7 @@ export default class SessionManager {
 
 	}
 
-	public createSession(guild: discord.Guild, activationChannel: discord.SendableChannels): MusicSession {
+	public createSession(guild: discord.Guild, activationChannel: discord.SendableChannels, user: User): MusicSession {
 		if (this.getSession(guild)) throw 'Session již je na tomto serveru aktivní!';
 
 		console.log('Creating a new session for ' + guild.id);
@@ -21,7 +21,8 @@ export default class SessionManager {
 			this.client,
 			id,
 			guild,
-			activationChannel
+			activationChannel,
+			user
 		);
 
 		this.sessions[id] = session;

@@ -13,6 +13,9 @@ interface EmbedOptions {
 }
 
 export default class InteractionManager {
+	public readonly DEFAULT_EMBED_COLOR = 0x158ced;
+	public readonly DEFAULT_ERROR_EMBED_COLOR = 0x158ced;
+
 	constructor(private client: MusicBot) {
 	}
 
@@ -23,7 +26,7 @@ export default class InteractionManager {
 	public generateErrorEmbed(arg1: string | any, options?: EmbedOptions): EmbedBuilder | void {
 		var title: string;
 		var description: string | undefined = undefined;
-		var color: number = 0xcf3a50;
+		var color: number = this.DEFAULT_ERROR_EMBED_COLOR;
 		var author: {
 			name: string,
 			iconURL?: string
@@ -87,7 +90,7 @@ export default class InteractionManager {
 
 	public generateVideoEmbed(queuedVideo: QueuedVideo): EmbedBuilder {
 		const embed = new EmbedBuilder()
-			.setColor(0x158ced)
+			.setColor(this.DEFAULT_EMBED_COLOR)
 			.setTitle(queuedVideo.videoDetails.title)
 			.setURL(`https://youtube.com/watch?v=${queuedVideo.videoDetails.videoId}`)
 			.setDescription(queuedVideo.videoDetails.author.name)
@@ -109,7 +112,7 @@ export default class InteractionManager {
 
 	public generatePlaylistEmbed(queuedPlaylist: QueuedPlaylist) {
 		const embed = new EmbedBuilder()
-			.setColor(0x158ced)
+			.setColor(this.DEFAULT_EMBED_COLOR)
 			.setTitle(queuedPlaylist.id)
 			.setURL(`https://youtube.com/watch?list=${queuedPlaylist.id}v=${queuedPlaylist.videoList[queuedPlaylist.position]}`)
 			// .setDescription(discord.hyperlink(queuedVideo.videoDetails.author.name, queuedVideo.videoDetails.author.url))

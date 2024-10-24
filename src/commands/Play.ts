@@ -60,7 +60,7 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 		try {
 			var session = this.client.getSessionManager().getSession(interaction.guild);
 			if (!session) {
-				session = this.client.getSessionManager().createSession(interaction.guild, interaction.channel);
+				session = this.client.getSessionManager().createSession(interaction.guild, interaction.channel, interaction.user);
 				this.client.log.write('Create session: ', interaction.user.displayName);
 			}
 
