@@ -1,4 +1,4 @@
-import discord from 'discord.js';
+import discord, { User } from 'discord.js';
 import MusicBot from "./MusicBot";
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, DiscordGatewayAdapterCreator, joinVoiceChannel, NoSubscriberBehavior, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice';
 import MusicQueue from './MusicQueue';
@@ -9,7 +9,11 @@ export default class MusicSession {
 	private player?: AudioPlayer;
 	private connection?: VoiceConnection;
 	private channel?: discord.VoiceBasedChannel;
+
 	public creationDate: Date;
+	public updateDate: Date;
+	public createdBy: string;
+	public updatedBy: string;
 
 	private queue: MusicQueue;
 	public youtubePlayer: YoutubePlayer;
@@ -23,12 +27,17 @@ export default class MusicSession {
 		private client: MusicBot,
 		public id: string,
 		public guild: discord.Guild,
-		public interactionChannel: discord.SendableChannels
+		public interactionChannel: discord.SendableChannels,
+		createdBy: User
 	) {
 		this.queue = new MusicQueue(this.client, this);
 		this.youtubePlayer = new YoutubePlayer(this.client, this);
 
 		this.creationDate = new Date();
+		this.updateDate = new Date();
+
+		this.createdBy = createdBy.id;
+		this.updatedBy = createdBy.id;
 	}
 
 	public setTerminationCountdown(time_ms: number) {

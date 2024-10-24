@@ -166,9 +166,20 @@ export default class MusicBot {
 				return;
 			}
 
-			if (await command.dispatch(interaction, session) && interaction.channel?.isSendable())
-				(session || this.sessionManager.getSession(interaction))?.setInteractionChannel(interaction.channel);
+			const execResult = await command.dispatch(interaction, session);
+
+			if (execResult) {
+				let session_ = (session || this.sessionManager.getSession(interaction));
 				
+				if (session_ && interaction.channel?.isSendable()) {
+					session_.setInteractionChannel(interaction.channel);
+				}
+
+				if (session_) {
+					session_.updateDate = new Date();
+					session_.updatedBy = interaction.user.id;
+				}
+			}	
 		}
 		else if (interaction.isButton()) {
 			this.emit('buttonInteraction', interaction);
