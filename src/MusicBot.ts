@@ -14,18 +14,19 @@ import JoinCommand from './commands/Join';
 import StopComamnd from './commands/Stop';
 import LoopCommand from './commands/Loop';
 import YoutubeAPI from './api/YoutubeAPI';
-import DebugCommand from './commands/Debug';
+import AdminCommand from './commands/Admin';
 import assert from 'node:assert';
 import BotConfig, { IBotConfig } from './BotConfig';
 import Log from './Log';
 
-type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'configLoad';
+type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'autocompleteInteraction' | 'configLoad';
 
 interface MusicBotEventsMap extends Record<MusicBotEvents, any> {
 	'load': discord.Client,
 	'configLoad': IBotConfig,
 	'buttonInteraction': discord.ButtonInteraction<discord.CacheType>,
-	'stringSelectInteraction': discord.StringSelectMenuInteraction<discord.CacheType>
+	'stringSelectInteraction': discord.StringSelectMenuInteraction<discord.CacheType>,
+	'autocompleteInteraction': discord.AutocompleteInteraction<discord.CacheType>
 }
 
 export default class MusicBot {
@@ -68,7 +69,7 @@ export default class MusicBot {
 			new JoinCommand(this),
 			new StopComamnd(this),
 			new LoopCommand(this),
-			new DebugCommand(this)
+			new AdminCommand(this)
 			// new ConfigCommand(this)
 		];
 
@@ -152,19 +153,18 @@ export default class MusicBot {
 	}
 
 	private async handleInteraction(interaction: DiscordInteraction) {
-		if (interaction.isChatInputCommand()) {
-			if (this.loopingDisabled && interaction.commandName === 'loop') {
-				this.handleError(`Loop příkaz je vypnut kvůli interní chybě.`, interaction);
-				return;
-			}
+		const command = this.commands.find((command) => command.match(interaction));
+		const session = this.sessionManager.getSession(interaction);
 
-			const command = this.commands.find((command) => command.match(interaction));
+		if (interaction.isChatInputCommand()) {
 			if (!command) {
 				this.handleError(`Failed to recognize command "${interaction.commandName}"!`, interaction);
 				return;
 			}
-
-			var session = this.sessionManager.getSession(interaction);
+			if (this.loopingDisabled && interaction.commandName === 'loop') {
+				this.handleError(`Loop příkaz je vypnut kvůli interní chybě.`, interaction);
+				return;
+			}
 
 			if (await command.dispatch(interaction, session) && interaction.channel?.isSendable())
 				(session || this.sessionManager.getSession(interaction))?.setInteractionChannel(interaction.channel);
@@ -176,6 +176,12 @@ export default class MusicBot {
 		}
 		else if (interaction.isStringSelectMenu()) {
 			this.emit("stringSelectInteraction", interaction);
+		}
+		else if (interaction.isAutocomplete()) {
+			if (command && command.onAutoComplete)
+				command.onAutoComplete(interaction, session);
+
+			this.emit('autocompleteInteraction', interaction);
 		}
 		else if (interaction.isRepliable()) {
 			this.handleError('Unknown interaction.', interaction);

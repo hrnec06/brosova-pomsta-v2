@@ -1,23 +1,26 @@
-import discord, { SharedSlashCommand } from "discord.js";
+import discord, { Interaction, SharedSlashCommand } from "discord.js";
 import MusicSession from "../MusicSession";
 
 type OnRunCallback = (interaction: DiscordChatInteraction, session: MusicSession | null) => boolean | Promise<boolean>;
-
+type onAutocompleteCallback = (interaction: discord.AutocompleteInteraction<discord.CacheType>, session: MusicSession | null) => void
 export default abstract class DiscordCommand {
-    constructor(
-        private command: SharedSlashCommand,
-        public name: string
-    ) { }
+	constructor(
+		private command: SharedSlashCommand,
+		public name: string
+	) { }
 
-    public getCommand(): discord.RESTPostAPIChatInputApplicationCommandsJSONBody {
-        return this.command.toJSON();
-    }
+	public getCommand(): discord.RESTPostAPIChatInputApplicationCommandsJSONBody {
+		return this.command.toJSON();
+	}
 
-    public match(interaction: DiscordChatInteraction): boolean {
-        return this.command.name === interaction.commandName;
-    }
+	public match(interaction: DiscordInteraction): boolean {
+		if (!interaction.isCommand()) return false;
+
+		return this.command.name === interaction.commandName;
+	}
 }
 
 export interface DiscordCommandInterface {
-    dispatch: OnRunCallback
+	dispatch: OnRunCallback,
+	onAutoComplete?: onAutocompleteCallback
 }
