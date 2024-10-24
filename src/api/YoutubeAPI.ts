@@ -42,7 +42,7 @@ export default class YoutubeAPI {
 	}
 
 	public getPlaylistIdFromURL(url: string) {
-		const regex = /(?:http(?:s)?:\/\/)?(?:www\.)?youtu(?:\.be|be\.com)\/(?:.+)?&list=(.+?)(?:&|$)/;
+		const regex = /^(?:http(?:s)?:\/\/)?(?:www\.)?youtu(?:\.be|be\.com)\/(?:.+)?&list=(.+?)(?:&|$)/;
 		return regex.exec(url)?.[1] ?? null;
 	}
 
