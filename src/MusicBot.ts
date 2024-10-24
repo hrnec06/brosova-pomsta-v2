@@ -87,6 +87,8 @@ export default class MusicBot {
 				console.error(err);
 			}
 
+			console.log(this.client);
+
 			this.registerCommands();
 			this.config.getConfigAsync(() => this.config.loadDeveloperTools());
 		});
