@@ -293,6 +293,114 @@ namespace Utils {
 		return array;
 	}
 
+	export function repeatString(string: string, repeat: number) {
+		var builder: string = '';
+
+		for (let i = 0; i < repeat; i++)
+				builder += string;
+
+		return builder;
+	}
+
+	interface TableGeneratorOptions {
+		joinSymbol: string,
+		verticalSymbol: string,
+		horizontalSymbol: string,
+		horizontalPadding: number
+	}
+	export class TableGenerator {
+		private readonly JOIN_SYMBOL: string = 			'+';
+		private readonly VERTICAL_SYMBOL: string = 		'|';
+		private readonly HORIZONTAL_SYMBOL: string = 	'-';
+		private readonly HORIZONTAL_PADDING: number = 	2;
+
+		private columns: string[];
+		private rows: string[][];
+
+		constructor(private options?: TableGeneratorOptions) {
+			this.columns = [];
+			this.rows = [];
+		}
+
+		public addColumn(label: string): TableGenerator {
+			this.columns.push(label);
+			return this;
+		}
+
+		public addRow(...row: (number | string | boolean)[]): TableGenerator {
+			var string: string[] = row.map(r => r.toString());
+			this.rows.push(string);
+			return this;
+		}
+
+		public build() {
+			
+			var builder: string = '';
+			
+			const JOIN_SYMBOL = this.options?.joinSymbol ?? this.JOIN_SYMBOL;
+			const VERTICAL_SYMBOL = this.options?.verticalSymbol ?? this.VERTICAL_SYMBOL;
+			const HORIZONTAL_SYMBOL = this.options?.verticalSymbol ?? this.HORIZONTAL_SYMBOL;
+			const HORIZONTAL_PADDING = this.options?.horizontalPadding ?? this.HORIZONTAL_PADDING;
+			const padding = Utils.repeatString(' ', HORIZONTAL_PADDING);
+
+			// Get column widths
+			const columnLengths: number[] = [];
+			for (let x = 0; x < this.columns.length; x++) {
+				const lengths: number[] = [this.columns[x].length + HORIZONTAL_PADDING * 2];
+
+				for (let y = 0; y < this.rows.length; y++) {
+					const r = this.rows[y][x];
+					if (!r) break;
+
+					lengths.push(r.length + HORIZONTAL_PADDING * 2);
+				}
+
+				columnLengths.push(Math.max(...lengths));
+			}
+
+
+			// Build row splitter
+			var rowSplitter: string = JOIN_SYMBOL;
+			for (let i = 0; i < columnLengths.length; i++) {
+				const l = columnLengths[i];
+				rowSplitter += `${Utils.repeatString(HORIZONTAL_SYMBOL, l)}` + JOIN_SYMBOL;
+			}
+			rowSplitter += '\n';
+
+			// Start build
+			builder += rowSplitter;
+
+			const rows = [this.columns, ...this.rows];
+			for (let y = 0; y < rows.length; y++) {
+				const row = rows[y];
+				builder += VERTICAL_SYMBOL;
+
+				for (let x = 0; x < this.columns.length; x++) {
+					if (x >= row.length) {
+						builder += Utils.repeatString(' ', columnLengths[x]) + VERTICAL_SYMBOL;
+						continue;
+					}
+					let line = padding + row[x] + padding;
+					const padLen = Math.max(((columnLengths[x] ?? 0) - line.length), 0) / 2;
+					line = Utils.repeatString(' ', Math.ceil(padLen)) + line + Utils.repeatString(' ', Math.floor(padLen)) + VERTICAL_SYMBOL;
+
+					builder += line;
+				}
+
+				builder += '\n' + rowSplitter;
+			}
+
+			return builder;
+		}
+
+		public clear(type?: 'rows' | 'columns') {
+			if (!type || type == 'rows') this.rows = [];
+			if (!type || type == 'columns') this.columns	= [];
+
+			return this;
+		}
+	}
+
 	export namespace BotUtils {
 		export function isValidMember(member: any): member is GuildMember {
 			return member instanceof GuildMember;
