@@ -14,7 +14,7 @@ export default abstract class DiscordCommand {
 	}
 
 	public match(interaction: DiscordInteraction): boolean {
-		if (!interaction.isCommand()) return false;
+		if (!('commandName' in interaction)) return false;
 
 		return this.command.name === interaction.commandName;
 	}
