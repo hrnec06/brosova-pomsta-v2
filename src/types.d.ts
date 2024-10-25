@@ -18,6 +18,7 @@ declare interface QueuedPlaylist {
 	position: number,
 	user: UserDetails,
 	id: string,
+	activeVideo?: QueuedVideo,
 }
 
 type QueuedItem = QueuedVideo | QueuedPlaylist;

@@ -61,8 +61,7 @@ export default class YoutubePlayer {
 	public handleEnd(forced: boolean = false) {
 		if (this.session.isLooping()) {
 			const activeVideo = this.session.getQueue().getActiveVideo();
-			// activeVideo && this.play(activeVideo);
-			throw 'handleEnd function failed to loop a video.';
+			activeVideo && this.play(activeVideo);
 			return;
 		}
 		this.playing = false;

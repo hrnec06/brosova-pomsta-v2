@@ -31,7 +31,6 @@ export default class BotConfig {
 	private readonly CONFIG_DIRECTORY: string = 'bot-config.json';
 	private readonly SYSTEM_DIR: keyof IBotConfig = 'system';
 	private readonly BOT_DIR: keyof IBotConfig = 'bot';
-	private readonly CONFIG_VERSION: string = '1.1.1';
 
 	public developerChannel?: discord.SendableChannels;
 	public developerGuild?: discord.Guild;
@@ -132,9 +131,9 @@ export default class BotConfig {
 				if (ok) {
 					config = deepmerge(this.defaultConfig(), configJson);
 
-					if (config.version !== this.CONFIG_VERSION) {
+					if (config.version !== this.client.BOT_VERSION) {
 						console.log(`Older configuration version detected! Saving the upgraded file.`);
-						config.version = this.CONFIG_VERSION;
+						config.version = this.client.BOT_VERSION;
 						await this.saveConfig(config);
 					}
 				}
@@ -163,7 +162,7 @@ export default class BotConfig {
 
 	private defaultConfig(): IBotConfig {
 		return {
-			version: this.CONFIG_VERSION,
+			version: this.client.BOT_VERSION,
 			bot: {
 				bannedItems: [],
 				volumeShift: 0

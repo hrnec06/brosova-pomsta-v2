@@ -117,17 +117,9 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 				if (!session)
 					throw 'Session nebyla nalezena.';
 
-				const activeItem = session.getQueue().getActiveVideo();
-				let activeVideoLabel: string;
-				if (!activeItem) {
-					activeVideoLabel = '-';
-				}
-				else if (Utils.BotUtils.isVideoItem(activeItem)) {
-					activeVideoLabel = activeItem.videoDetails.title;
-				}
-				else {
-					activeVideoLabel = `playlist (${activeItem.position}/${activeItem.videoList.length})`;
-				}
+				const activeItem = session.getQueue().getActiveItem();
+				const isPlaylist = activeItem ? Utils.BotUtils.isPlaylistItem(activeItem).toString() : '-';
+				const activeVideoLabel: string = session.getQueue().getActiveVideo()?.videoDetails.title ?? '-';
 
 				const creatorUser = this.client.client.users.cache.get(session.createdBy);
 				const updateUser = this.client.client.users.cache.get(session.updatedBy);
@@ -155,12 +147,13 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 						{ name: '\u200b', value: '\u200b' },
 						{ name: 'Kanál', value: session.getVoiceChannel()?.name ?? 'nepřipojen', inline: true },
 						{ name: 'Připojen', value: session.isJoined() ? 'true' : 'false', inline: true },
+						{ name: 'Posluchači', value: isNaN(listeners) ? '-' : listeners.toString(), inline: true },
 						{ name: '\u200b', value: '\u200b' },
 						{ name: 'Hraje', value: session.youtubePlayer.isPlaying() ? 'true' : 'false', inline: true },
+						{ name: 'Playlist', value: isPlaylist, inline: true },
 						{ name: 'Video', value: activeVideoLabel, inline: true },
 						{ name: '\u200b', value: '\u200b' },
 						{ name: 'Loop', value: session.isLooping() ? 'true' : 'false', inline: true },
-						{ name: 'Posluchači', value: isNaN(listeners) ? '-' : listeners.toString(), inline: true },
 					])
 					.setColor(this.client.getInteractionManager().DEFAULT_EMBED_COLOR)
 					.setFooter({

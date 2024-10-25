@@ -30,6 +30,8 @@ interface MusicBotEventsMap extends Record<MusicBotEvents, any> {
 }
 
 export default class MusicBot {
+	public readonly BOT_VERSION: string = '1.1.1';
+
 	public client: discord.Client;
 	private rest: discord.REST;
 	private commands: (DiscordCommand & DiscordCommandInterface)[];
