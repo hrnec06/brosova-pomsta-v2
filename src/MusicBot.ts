@@ -30,35 +30,40 @@ interface MusicBotEventsMap extends Record<MusicBotEvents, any> {
 }
 
 export default class MusicBot {
-	public readonly BOT_VERSION: string = '1.1.1';
+	public readonly BOT_VERSION: 	string = 	'1.1.1';
 
-	public client: discord.Client;
-	private rest: discord.REST;
-	private commands: (DiscordCommand & DiscordCommandInterface)[];
+	public 	client: 					discord.Client;
+	private 	rest: 					discord.REST;
+	private 	commands: 				(DiscordCommand & DiscordCommandInterface)[];
 
-	private interactionManager: InteractionManager;
-	private sessionManager: SessionManager;
-	public youtubeAPI: YoutubeAPI;
-	public log: Log;
+	public 	readonly config: 		BotConfig;
+	private 	interactionManager: 	InteractionManager;
+	private 	sessionManager: 		SessionManager;
+	public 	youtubeAPI: 			YoutubeAPI;
+	public 	log: 						Log;
 
-	public loopingDisabled: boolean = false;
+	public 	loopingDisabled: 		boolean = 	false;
 
-	private eventListners: Partial<Record<MusicBotEvents, ((value: any) => void)[]>> = {};
+	private 	eventListners: 		Partial<Record<MusicBotEvents, ((value: any) => void)[]>> = {};
 
-	public readonly config: BotConfig;
 
 	constructor(
 		private BOT_TOKEN: string,
 		private CLIENT_ID: string,
 		GOOGLE_API_KEY: string | undefined
 	) {
+		// Init bot
 		const BOT_LOAD_START = Date.now();
 		console.log("Loggin in...");
 
-		this.youtubeAPI = new YoutubeAPI(this, GOOGLE_API_KEY);
-		this.config = new BotConfig(this);
-		this.log = new Log(this);
+		// Init managers
+		this.youtubeAPI = 			new YoutubeAPI(this, GOOGLE_API_KEY);
+		this.config = 					new BotConfig(this);
+		this.log = 						new Log(this);
+		this.interactionManager = 	new InteractionManager(this);
+		this.sessionManager = 		new SessionManager(this);
 
+		// Init bot client
 		this.client = this.createClient();
 		this.rest = this.createREST();
 
@@ -74,14 +79,14 @@ export default class MusicBot {
 			// new ConfigCommand(this)
 		];
 
-		this.interactionManager = new InteractionManager(this);
-		this.sessionManager = new SessionManager(this);
-
+		// On client ready
 		this.client.on('ready', async () => {
+			// Emit event
 			this.emit('load', this.client);
 			console.log(`\n\nBot logged-in as ${this.client.user?.username} after ${((Date.now() - BOT_LOAD_START) / 1000).toFixed(2)}s.`);
 
 			try {
+				// Activity
 				this.client.user?.setActivity('yOuR pHOnE liNgiNg', { type: discord.ActivityType.Custom });
 			} catch (err) {
 				console.error('An error occured while loading the bot.');
@@ -89,20 +94,25 @@ export default class MusicBot {
 			}
 
 			this.registerCommands();
-			this.config.getConfigAsync(() => this.config.loadDeveloperTools());
+			this.config.getConfigAsync(() => this.config.loadDeveloperVariables());
 		});
 
+		// Voice update (disconnect, connect)
 		this.client.on('voiceStateUpdate', (oldState, newState) => {
 			const session = this.sessionManager.getSession(newState.guild);
 			if (!session || !session.isJoined())
 				return;
 			
+			// Did bot leave / join
 			const isBot = newState.member?.id === this.client.user?.id;
+			// Is leave event?
 			const isLeave = oldState.channel != null && newState.channel == null;
 
+			// On bot disconnect
 			if (isLeave && isBot)
 				this.handleDisconnect(oldState, newState);
 
+			// On user join
 			if (!isLeave && !isBot) {
 				const voice = session.getVoiceChannel();
 				assert(voice != undefined, 'Voice channel is not defined.');
@@ -111,6 +121,7 @@ export default class MusicBot {
 					session.cancelTerminationCountdown();
 			}
 
+			// On user disconnect
 			if (isLeave && !isBot) {
 				const voice = session.getVoiceChannel();
 				assert(voice != undefined, 'Voice channel is not defined.');
@@ -123,6 +134,8 @@ export default class MusicBot {
 
 		this.client.on('error', (error) => this.handleError(error));
 		this.client.on('interactionCreate', async (interaction) => this.handleInteraction(interaction));
+
+		// Debug
 	}
 
 	public getInteractionManager() {
@@ -157,6 +170,7 @@ export default class MusicBot {
 		const command = this.commands.find((command) => command.match(interaction));
 		const session = this.sessionManager.getSession(interaction);
 
+		// Command
 		if (interaction.isChatInputCommand()) {
 			if (!command) {
 				this.handleError(`Failed to recognize command "${interaction.commandName}"!`, interaction);
@@ -182,29 +196,36 @@ export default class MusicBot {
 				}
 			}	
 		}
+		// Button
 		else if (interaction.isButton()) {
 			this.emit('buttonInteraction', interaction);
 			this.handleError('Buttons are not supported!', interaction);
 		}
+		// Select menu
 		else if (interaction.isStringSelectMenu()) {
 			this.emit("stringSelectInteraction", interaction);
 		}
+		// Autocomplete
 		else if (interaction.isAutocomplete()) {
 			if (command && command.onAutoComplete)
 				command.onAutoComplete(interaction, session);
 
 			this.emit('autocompleteInteraction', interaction);
 		}
+		// None above, but repliable
 		else if (interaction.isRepliable()) {
 			this.handleError('Unknown interaction.', interaction);
 		}
+		// Unrecognized
 		else {
 			this.handleError('Failed to recognize interaction.', interaction);
 		}
 	}
 
+	// On bot disconnect
 	private handleDisconnect(oldState: discord.VoiceState, newState: discord.VoiceState) {
 		const guild = oldState.channel?.guild;
+		// Destroy session
 		if (guild) {
 			const session = this.sessionManager.getSession(guild);
 
@@ -220,6 +241,7 @@ export default class MusicBot {
 		const parsedCommands = this.commands.map(command => command.getCommand());
 		const stringifiedCommands = JSON.stringify(parsedCommands);
 
+		// Skip registation if commands didnt update
 		const FILE_NAME = "last-commands.json";
 		try {
 			const prev = await fs.readFile(FILE_NAME);
@@ -228,8 +250,10 @@ export default class MusicBot {
 				return;
 			}
 		} catch {
+			// No last-commands.json found, continue with registration
 		}
 
+		// Register
 		try {
 			console.log("Registering commands...");
 
@@ -253,10 +277,15 @@ export default class MusicBot {
 		return command as C || null;
 	}
 
+	/**
+	 * Handles an object Error or string error.
+	 * Replies to the interaction, follows up, or send a completely new message.
+	 * If none of the methods work, sends the error to console
+	 */
 	public async handleError(error: any, interaction?: DiscordInteraction) {
 		const embed = this.interactionManager.generateErrorEmbed(error, { interaction: interaction });
 
-		this.log.write('Error: ', error, interaction);
+		this.log.write('Error: ', [error, interaction]);
 
 		if (interaction && interaction.isRepliable() && !interaction.replied) {
 			if (interaction.deferred) {
@@ -275,13 +304,18 @@ export default class MusicBot {
 			console.error(error);
 	}
 
+	/**
+	 * Register event listener
+	 */
 	public on<KEY extends MusicBotEvents>(event: KEY, execute: (value: MusicBotEventsMap[KEY]) => void) {
 		if (!this.eventListners[event])
 			this.eventListners[event] = [];
 
 		this.eventListners[event].push(execute);
 	}
-
+	/**
+	 * Trigger event listener
+	 */
 	public emit<KEY extends MusicBotEvents>(event: KEY, value: MusicBotEventsMap[KEY]) {
 		if (!this.eventListners[event]) return;
 
