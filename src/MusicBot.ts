@@ -62,7 +62,6 @@ export default class MusicBot {
 		this.client = this.createClient();
 		this.rest = this.createREST();
 
-
 		this.commands = [
 			new PingCommand(this),
 			new PlayCommand(this),
@@ -254,25 +253,26 @@ export default class MusicBot {
 		return command as C || null;
 	}
 
-	public handleError(error: any, interaction?: DiscordInteraction) {
+	public async handleError(error: any, interaction?: DiscordInteraction) {
 		const embed = this.interactionManager.generateErrorEmbed(error, { interaction: interaction });
+
+		this.log.write('Error: ', error, interaction);
 
 		if (interaction && interaction.isRepliable() && !interaction.replied) {
 			if (interaction.deferred) {
-				interaction.followUp({ embeds: [embed], ephemeral: true });
+				await interaction.followUp({ embeds: [embed], ephemeral: true });
 			} else {
-				interaction.reply({ embeds: [embed], ephemeral: true });
+				await interaction.reply({ embeds: [embed], ephemeral: true });
 			}
 		}
 		else if (interaction && interaction.channel && interaction.channel.isSendable()) {
-			interaction.channel.send({ embeds: [embed] });
+			await interaction.channel.send({ embeds: [embed] });
 		}
 		else if (this.config.developerChannel) {
-			this.config.developerChannel.send({ embeds: [embed] });
+			await this.config.developerChannel.send({ embeds: [embed] });
 		}
-		else {
+		else
 			console.error(error);
-		}
 	}
 
 	public on<KEY extends MusicBotEvents>(event: KEY, execute: (value: MusicBotEventsMap[KEY]) => void) {
