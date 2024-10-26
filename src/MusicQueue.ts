@@ -11,35 +11,28 @@ export default class MusicQueue {
 
 	}
 
-	public async pushToQueue(video: QueuedItem, playNow: boolean, interaction: DiscordInteraction) {
-		this.queue.push(video);
+	public async pushToQueue(item: QueuedItem, interaction: DiscordInteraction, playNow: boolean) {
+		this.queue.push(item);
 
 		if (!this.session.isJoined()) {
 			const r = await this.session.join(interaction);
 			if (!r) throw 'Bot nelze připojit na server.';
 		}
 
-		if (playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 2)) {
+		playNow = playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 1);
+		if (playNow) {
 			this.position = this.queue.length - 1;
-			if (Utils.BotUtils.isPlaylistItem(video)) {
-				return await this.playNext(interaction) !== false;
-			}
-			else if (Utils.BotUtils.isVideoItem(video)) {
-				await this.session.youtubePlayer.play(video, interaction);
-			}
-			else
-				throw new Error('Invalid queue item.');
+			await this.playActiveVideo(false, Utils.BotUtils.isPlaylistItem(item), interaction);
 		}
-
-		return true;
 	}
 
-	public async playNext(interaction?: DiscordInteraction, skipPlaylist?: boolean): Promise<QueuedVideo | false> {
-		var nextVideo: QueuedVideo;
-
+	public async playNext(interaction?: DiscordInteraction, skipPlaylist: boolean = false): Promise<false | QueuedVideo> {
 		const activeItem = this.getActiveItem();
 
-		if (activeItem != null && Utils.BotUtils.isPlaylistItem(activeItem) && activeItem.position < activeItem.videoList.length && skipPlaylist !== true) {
+		var nextVideo: QueuedVideo;
+
+		if (activeItem != null && Utils.BotUtils.isPlaylistItem(activeItem) && activeItem.position && activeItem.position < activeItem.videoList.length && skipPlaylist !== true) {
+			// Play playlist video
 			const videoInfo = await this.client.youtubeAPI.getVideoDataByID(activeItem.videoList[activeItem.position]);
 			activeItem.position += 1;
 
@@ -52,6 +45,7 @@ export default class MusicQueue {
 			activeItem.activeVideo = nextVideo;
 		}
 		else {
+			// Play non-playlist video
 			const newPos = this.position + 1;
 			if (newPos > this.queue.length - 1) return false;
 
@@ -59,7 +53,7 @@ export default class MusicQueue {
 			this.position = newPos;
 
 			if (Utils.BotUtils.isPlaylistItem(nextItem)) {
-				return await this.playNext(interaction);
+				return await this.playNext(interaction, false);
 			}
 			else if (Utils.BotUtils.isVideoItem(nextItem)) {
 				nextVideo = nextItem;
@@ -68,11 +62,48 @@ export default class MusicQueue {
 				throw new Error('Invalid queue item.');
 		}
 
-		if (!nextVideo) return false;
-		this.session.youtubePlayer.play(nextVideo, interaction);
+		await this.playActiveVideo(true, activeItem != null && Utils.BotUtils.isPlaylistItem(activeItem));
 
 		return nextVideo;
 	}
+
+	private async playActiveVideo(fromQueue: boolean, fromPlaylist: boolean, interaction?: DiscordInteraction) {
+		const video = this.getActiveVideo();
+		if (!video)
+			throw 'ERROR: Failed to play active video, active video is undefined.';
+
+		// Announce next video
+		const videoEmbed = this.client.getInteractionManager().generateVideoEmbed(video, fromQueue, fromPlaylist);
+		this.session.interactionChannel.send({embeds: [videoEmbed]});
+
+		// Play video
+		return await this.session.youtubePlayer.play(video, interaction);
+	}
+
+	// public async pushToQueue(video: QueuedItem, playNow: boolean, interaction: DiscordInteraction) {
+	// 	this.queue.push(video);
+
+	// 	if (!this.session.isJoined()) {
+	// 		const r = await this.session.join(interaction);
+	// 		if (!r) throw 'Bot nelze připojit na server.';
+	// 	}
+
+	// 	// Should start playing right away
+	// 	if (playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 2)) {
+	// 		this.position = this.queue.length - 1;
+
+	// 		if (Utils.BotUtils.isPlaylistItem(video)) {
+	// 			return await this.playNext(interaction) !== false;
+	// 		}
+	// 		else if (Utils.BotUtils.isVideoItem(video)) {
+	// 			await this.session.youtubePlayer.play(video, interaction);
+	// 		}
+	// 		else
+	// 			throw new Error('Invalid queue item.');
+	// 	}
+
+	// 	return true;
+	// }
 
 	public getActiveItem(): QueuedItem | null {
 		return this.queue[this.position] ?? null;

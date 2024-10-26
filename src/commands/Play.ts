@@ -54,10 +54,10 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 			interaction.reply({ embeds: [embed], ephemeral: true });
 			return false;
 		}
-
-		await interaction.deferReply();
-
+		
 		try {
+			await interaction.deferReply();
+
 			var session = this.client.getSessionManager().getSession(interaction.guild);
 			if (!session) {
 				session = this.client.getSessionManager().createSession(interaction.guild, interaction.channel, interaction.user);
@@ -115,18 +115,15 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 			}
 
 			session.setActiveVoiceChannel(voiceChannel);
-			await session.getQueue().pushToQueue(itemToQueue, playNow, interaction);
+			await session.getQueue().pushToQueue(itemToQueue, interaction, playNow);
 
 			var embed: EmbedBuilder;
 			if (Utils.BotUtils.isVideoItem(itemToQueue)) {
-				embed = this.client.getInteractionManager().generateVideoEmbed(itemToQueue) as EmbedBuilder;
+				embed = this.client.getInteractionManager().generateVideoEmbed(itemToQueue, false, false) as EmbedBuilder;
 			}
 			else {
 				embed = this.client.getInteractionManager().generatePlaylistEmbed(itemToQueue) as EmbedBuilder;
 			}
-
-			interaction.followUp({embeds: [embed]});
-
 			return true;
 		} catch (err) {
 			this.client.handleError(err, interaction);
