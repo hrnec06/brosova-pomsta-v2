@@ -14,7 +14,7 @@ interface EmbedOptions {
 
 export default class InteractionManager {
 	public readonly DEFAULT_EMBED_COLOR = 0x158ced;
-	public readonly DEFAULT_ERROR_EMBED_COLOR = 0x158ced;
+	public readonly DEFAULT_ERROR_EMBED_COLOR = 0xeb4034;
 
 	constructor(private client: MusicBot) {
 	}
@@ -88,7 +88,7 @@ export default class InteractionManager {
 		return embed;
 	}
 
-	public generateVideoEmbed(queuedVideo: QueuedVideo): EmbedBuilder {
+	public generateVideoEmbed(queuedVideo: QueuedVideo, fromQueue: boolean, fromPlaylist: boolean): EmbedBuilder {
 		const embed = new EmbedBuilder()
 			.setColor(this.DEFAULT_EMBED_COLOR)
 			.setTitle(queuedVideo.videoDetails.title)
