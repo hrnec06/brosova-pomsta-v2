@@ -74,9 +74,9 @@ export default class MusicSession {
 		return this.joined;
 	}
 	public join(interaction?: DiscordInteraction) {
-		return new Promise<boolean>((resolve) => {
+		return new Promise<boolean>((resolve, error) => {
 			if (this.joining) {
-				return resolve(false);
+				return error('Bot is already joining.');
 			}
 			this.joining = true;
 
@@ -102,12 +102,12 @@ export default class MusicSession {
 
 				connection.on(VoiceConnectionStatus.Disconnected, () => {
 					this.joined = false;
-				})
+				});
 
 				this.player = createAudioPlayer({
 					behaviors: {
-						noSubscriber: NoSubscriberBehavior.Pause
-					}
+						noSubscriber: NoSubscriberBehavior.Pause,
+					},
 				});
 		
 				this.player.on('stateChange', (old, newState) => {
@@ -116,11 +116,15 @@ export default class MusicSession {
 					}
 				});
 
+				this.player.on('error', (err) => {
+					this.client.handleError(err);
+				});
+
 				this.connection = connection;
 			} catch (err) {
-				resolve(false);
+				error(err);
 				this.joining = false;
-				this.client.handleError(err, interaction);
+				this.joined = false;
 			}
 		});
 	}
