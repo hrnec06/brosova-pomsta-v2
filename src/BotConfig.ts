@@ -4,11 +4,11 @@ import discord from 'discord.js';
 import fs from 'fs';
 import moment from "moment";
 
-type AppMode = 'production' | 'development';
+type AppEnvironment = 'production' | 'development';
 
 export interface IBotConfig {
 	version: string,
-	mode: AppMode,
+	environment: AppEnvironment,
 	production: IBotConfigSystem,
 	development: IBotConfigSystem,
 	bot: {
@@ -46,7 +46,7 @@ export default class BotConfig {
 	private configLoaded: boolean = false;
 
 	constructor(private client: MusicBot) {
-		this.config = this.defaultConfig();
+		this.config = this.getDefaultConfig();
 
 		if (!this.CONFIG_DIRECTORY.endsWith('.json')) {
 			console.warn('CONFIG_DIRECTORY must end with .json! Automatically correcting the mistake.');
@@ -79,7 +79,7 @@ export default class BotConfig {
 		}
 
 		try {
-			await fs.promises.writeFile(this.CONFIG_DIRECTORY, JSON.stringify(config || this.defaultConfig()), { encoding: 'utf-8' });
+			await fs.promises.writeFile(this.CONFIG_DIRECTORY, JSON.stringify(config || this.getDefaultConfig()), { encoding: 'utf-8' });
 		} catch (err) {
 			console.error('Failed to create a new configuration file.');
 			throw err;
@@ -150,7 +150,7 @@ export default class BotConfig {
 				}
 
 				if (ok) {
-					config = deepmerge(this.defaultConfig(), configJson);
+					config = deepmerge(this.getDefaultConfig(), configJson);
 
 					if (config.version !== this.client.BOT_VERSION) {
 						console.log(`Older configuration version detected! Saving the upgraded file.`);
@@ -163,19 +163,19 @@ export default class BotConfig {
 				else {
 					await this.createConfig();
 					console.log(`New configuration file ${this.CONFIG_DIRECTORY} successfully created.`);
-					config = this.defaultConfig();
+					config = this.getDefaultConfig();
 				}
 			}
 			else {
 				console.warn('Configuration file not found!');
 				await this.createConfig();
 				console.log(`New configuration file ${this.CONFIG_DIRECTORY} successfully created.`);
-				config = this.defaultConfig();
+				config = this.getDefaultConfig();
 			}
 		} catch (err) {
 			console.error('Configuration failed to load. Using default config.');
 			console.error(err);
-			config = this.defaultConfig();
+			config = this.getDefaultConfig();
 		}
 
 		console.log('Configration file successfully loaded!\n');
@@ -183,14 +183,14 @@ export default class BotConfig {
 		return config;
 	}
 
-	private defaultConfig(): IBotConfig {
+	private getDefaultConfig(): IBotConfig {
 		return {
 			version: this.client.BOT_VERSION,
 			bot: {
 				bannedItems: [],
 				volumeShift: 0
 			},
-			mode: 'development',
+			environment: 'development',
 			production: {
 				developerChannelID: '1292190183646564363',
 				developerUserID: '470952100726308864',
@@ -221,23 +221,23 @@ export default class BotConfig {
 		return this.config;
 	}
 
-	public getAppMode(): AppMode {
-		return this.getConfig().mode;
+	public getEnvironment(): AppEnvironment {
+		return this.getConfig().environment;
 	}
-	public getAppModeAsync(callback: (config: AppMode) => void) {
-		this.getConfigAsync((config) => callback(config.mode));
+	public getEnvironmentAsync(callback: (config: AppEnvironment) => void) {
+		this.getConfigAsync((config) => callback(config.environment));
 	}
-	public getSystemConfig(): IBotConfigSystem {
-		return this.config[this.config.mode];
+	public getSystem(): IBotConfigSystem {
+		return this.config[this.config.environment];
 	}
-	public getSystemConfigAsync(callback: (config: IBotConfigSystem) => void) {
-		this.getConfigAsync((config) => callback(config[config.mode]));
+	public getSystemAsync(callback: (config: IBotConfigSystem) => void) {
+		this.getConfigAsync((config) => callback(config[config.environment]));
 	}
 
-	public loadDeveloperTools() {
-		const developerChannel = this.client.client.channels.cache.get(this.getSystemConfig().developerChannelID);
+	public loadDeveloperVariables() {
+		const developerChannel = this.client.client.channels.cache.get(this.getSystem().developerChannelID);
 		if (!developerChannel) {
-			console.warn(`Developer channel ID ${this.getSystemConfig().developerChannelID} wasn't found.`);
+			console.warn(`Developer channel ID ${this.getSystem().developerChannelID} wasn't found.`);
 		}
 		else if (!developerChannel.isSendable()) {
 			console.warn(`Specified developer channel is not sendable.`);
@@ -246,14 +246,14 @@ export default class BotConfig {
 			this.developerChannel = developerChannel;
 		}
 
-		this.developerGuild = this.client.client.guilds.cache.get(this.getSystemConfig().developerGuildID);
+		this.developerGuild = this.client.client.guilds.cache.get(this.getSystem().developerGuildID);
 		if (!this.developerGuild) {
-			console.warn(`Developer guild ID ${this.getSystemConfig().developerGuildID} wasn't found.`);
+			console.warn(`Developer guild ID ${this.getSystem().developerGuildID} wasn't found.`);
 		}
 
-		this.developerUser = this.client.client.users.cache.get(this.getSystemConfig().developerUserID);
+		this.developerUser = this.client.client.users.cache.get(this.getSystem().developerUserID);
 		if (!this.developerUser) {
-			console.warn(`Developer user ID ${this.getSystemConfig().developerGuildID} wasn't found.`);
+			console.warn(`Developer user ID ${this.getSystem().developerGuildID} wasn't found.`);
 		}
 	}
 }
