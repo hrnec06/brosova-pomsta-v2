@@ -4,9 +4,13 @@ import discord from 'discord.js';
 import fs from 'fs';
 import moment from "moment";
 
+type AppMode = 'production' | 'development';
+
 export interface IBotConfig {
 	version: string,
-	system: IBotConfigSystem,
+	mode: AppMode,
+	production: IBotConfigSystem,
+	development: IBotConfigSystem,
 	bot: {
 		bannedItems: IBotConfigBannedItem[],
 		volumeShift: number
@@ -18,7 +22,8 @@ interface IBotConfigSystem {
 	developerUserID: string,
 	developerGuildID: string,
 	errorLogging: boolean,
-	debugLogging: boolean
+	debugLogging: boolean,
+	maxLogFiles: number
 }
 
 interface IBotConfigBannedItem {
@@ -29,7 +34,8 @@ interface IBotConfigBannedItem {
 
 export default class BotConfig {
 	private readonly CONFIG_DIRECTORY: string = 'bot-config.json';
-	private readonly SYSTEM_DIR: keyof IBotConfig = 'system';
+	private readonly PRODUCTION_DIR: keyof IBotConfig = 'production';
+	private readonly DEVELOPMENT_DIR: keyof IBotConfig = 'development';
 	private readonly BOT_DIR: keyof IBotConfig = 'bot';
 
 	public developerChannel?: discord.SendableChannels;
@@ -37,6 +43,7 @@ export default class BotConfig {
 	public developerUser?: discord.User;
 
 	private config: IBotConfig;
+	private configLoaded: boolean = false;
 
 	constructor(private client: MusicBot) {
 		this.config = this.defaultConfig();
@@ -49,6 +56,7 @@ export default class BotConfig {
 		this.loadConfig()
 			.then(config => {
 				this.config = config;
+				this.configLoaded = true;
 				this.client.emit('configLoad', config);
 			})
 			.catch((err) => {
@@ -115,12 +123,25 @@ export default class BotConfig {
 	
 				var ok = true;
 
+				// validation
 				if (!('version' in configJson)) {
 					console.warn(`ERROR: 'version' not found in config.`);
 					ok = false;
 				}
-				else if (!(this.SYSTEM_DIR in configJson)) {
-					console.warn(`ERROR: '${this.SYSTEM_DIR}' not found in config.`);
+				else if (!('mode' in configJson)) {
+					console.warn(`ERROR: 'mode' not found in config.`);
+					ok = false;
+				}
+				else if (configJson.mode !== 'development' && configJson.mode !== 'production') {
+					console.warn(`ERROR: 'mode' must be either 'development' or 'production'`);
+					ok = false;
+				}
+				else if (!(this.DEVELOPMENT_DIR in configJson)) {
+					console.warn(`ERROR: '${this.DEVELOPMENT_DIR}' not found in config.`);
+					ok = false;
+				}
+				else if (!(this.PRODUCTION_DIR in configJson)) {
+					console.warn(`ERROR: '${this.PRODUCTION_DIR}' not found in config.`);
 					ok = false;
 				}
 				else if (!(this.BOT_DIR in configJson)) {
@@ -134,8 +155,10 @@ export default class BotConfig {
 					if (config.version !== this.client.BOT_VERSION) {
 						console.log(`Older configuration version detected! Saving the upgraded file.`);
 						config.version = this.client.BOT_VERSION;
-						await this.saveConfig(config);
 					}
+
+					if (JSON.stringify(config) !== JSON.stringify(configJson))
+						await this.saveConfig(config);
 				}
 				else {
 					await this.createConfig();
@@ -167,18 +190,28 @@ export default class BotConfig {
 				bannedItems: [],
 				volumeShift: 0
 			},
-			system: {
+			mode: 'development',
+			production: {
 				developerChannelID: '1292190183646564363',
 				developerUserID: '470952100726308864',
 				developerGuildID: '1071785981923053588',
 				errorLogging: true,
-				debugLogging: true
+				debugLogging: true,
+				maxLogFiles: 1
+			},
+			development: {
+				developerChannelID: '1292190183646564363',
+				developerUserID: '470952100726308864',
+				developerGuildID: '1071785981923053588',
+				errorLogging: true,
+				debugLogging: true,
+				maxLogFiles: 20
 			}
 		}
 	}
 
 	public getConfigAsync(callback: (config: IBotConfig) => void) {
-		if (this.config)
+		if (this.configLoaded)
 			callback(this.config);
 		else
 			this.client.on('configLoad', (value) => callback(value));
@@ -188,10 +221,23 @@ export default class BotConfig {
 		return this.config;
 	}
 
+	public getAppMode(): AppMode {
+		return this.getConfig().mode;
+	}
+	public getAppModeAsync(callback: (config: AppMode) => void) {
+		this.getConfigAsync((config) => callback(config.mode));
+	}
+	public getSystemConfig(): IBotConfigSystem {
+		return this.config[this.config.mode];
+	}
+	public getSystemConfigAsync(callback: (config: IBotConfigSystem) => void) {
+		this.getConfigAsync((config) => callback(config[config.mode]));
+	}
+
 	public loadDeveloperTools() {
-		const developerChannel = this.client.client.channels.cache.get(this.config.system.developerChannelID);
+		const developerChannel = this.client.client.channels.cache.get(this.getSystemConfig().developerChannelID);
 		if (!developerChannel) {
-			console.warn(`Developer channel ID ${this.config.system.developerChannelID} wasn't found.`);
+			console.warn(`Developer channel ID ${this.getSystemConfig().developerChannelID} wasn't found.`);
 		}
 		else if (!developerChannel.isSendable()) {
 			console.warn(`Specified developer channel is not sendable.`);
@@ -200,14 +246,14 @@ export default class BotConfig {
 			this.developerChannel = developerChannel;
 		}
 
-		this.developerGuild = this.client.client.guilds.cache.get(this.config.system.developerGuildID);
+		this.developerGuild = this.client.client.guilds.cache.get(this.getSystemConfig().developerGuildID);
 		if (!this.developerGuild) {
-			console.warn(`Developer guild ID ${this.config.system.developerGuildID} wasn't found.`);
+			console.warn(`Developer guild ID ${this.getSystemConfig().developerGuildID} wasn't found.`);
 		}
 
-		this.developerUser = this.client.client.users.cache.get(this.config.system.developerUserID);
+		this.developerUser = this.client.client.users.cache.get(this.getSystemConfig().developerUserID);
 		if (!this.developerUser) {
-			console.warn(`Developer user ID ${this.config.system.developerGuildID} wasn't found.`);
+			console.warn(`Developer user ID ${this.getSystemConfig().developerGuildID} wasn't found.`);
 		}
 	}
 }

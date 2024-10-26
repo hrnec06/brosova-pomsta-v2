@@ -44,7 +44,7 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 	}
 	public async dispatch(interaction: DiscordChatInteraction) {
 		const user = interaction.member.user;
-		if (!user || user.id !== this.client.config.getConfig().system.developerUserID) {
+		if (!user || user.id !== this.client.config.getSystemConfig().developerUserID) {
 			this.client.handleError('K tomuto příkazu nemáš přístup!', interaction);
 			return false;
 		}
