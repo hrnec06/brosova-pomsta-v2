@@ -15,7 +15,7 @@ export default class YourPhoneLingingCommand extends DiscordCommand implements D
     public dispatch(interaction: DiscordChatInteraction) {
         const playcmd = this.client.getCommand<PlayCommand>('play');
         if (!playcmd) {
-            this.client.handleError("Play command is not present.", interaction);
+            this.client.handleError("Play command does not exist.", interaction);
             return false;
         }
 
