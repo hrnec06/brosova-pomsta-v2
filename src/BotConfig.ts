@@ -128,12 +128,12 @@ export default class BotConfig {
 					console.warn(`ERROR: 'version' not found in config.`);
 					ok = false;
 				}
-				else if (!('mode' in configJson)) {
-					console.warn(`ERROR: 'mode' not found in config.`);
+				else if (!('environment' in configJson)) {
+					console.warn(`ERROR: 'environment' not found in config.`);
 					ok = false;
 				}
-				else if (configJson.mode !== 'development' && configJson.mode !== 'production') {
-					console.warn(`ERROR: 'mode' must be either 'development' or 'production'`);
+				else if (configJson.environment !== 'development' && configJson.environment !== 'production') {
+					console.warn(`ERROR: 'environment' must be either 'development' or 'production'`);
 					ok = false;
 				}
 				else if (!(this.DEVELOPMENT_DIR in configJson)) {
