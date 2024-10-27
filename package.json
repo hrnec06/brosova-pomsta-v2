@@ -3,8 +3,8 @@
   "version": "2.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon",
-    "build": "npx tsc"
+    "dev": "nvm use lts && nodemon",
+    "build": "nvm use lts && npx tsc"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +21,7 @@
   "dependencies": {
     "@discordjs/opus": "^0.9.0",
     "@discordjs/voice": "^0.17.0",
-    "@distube/ytdl-core": "^4.14.4",
+    "@distube/ytdl-core": "^4.15.0",
     "deepmerge": "^4.3.1",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5",

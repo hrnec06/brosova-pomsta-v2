@@ -5,3 +5,4 @@ last-commands.json
 dist/
 bot-config.json
 logs/
+node_modules.zip
