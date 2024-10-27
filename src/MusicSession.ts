@@ -6,40 +6,40 @@ import YoutubePlayer from './YoutubePlayer';
 import assert from 'assert';
 
 export default class MusicSession {
-	private player?: AudioPlayer;
-	private connection?: VoiceConnection;
-	private channel?: discord.VoiceBasedChannel;
+	private 	player?: 					AudioPlayer;
+	private 	connection?: 				VoiceConnection;
+	private 	channel?: 					discord.VoiceBasedChannel;
 
-	public creationDate: Date;
-	public updateDate: Date;
-	public createdBy: string;
-	public updatedBy: string;
+	public 	creationDate: 				Date = 				new Date();
+	public 	updateDate: 				Date =				new Date();
+	public 	createdBy: 					string;
+	public 	updatedBy: 					string;
 
-	private queue: MusicQueue;
-	public youtubePlayer: YoutubePlayer;
+	private 	queue: 						MusicQueue;
+	public 	youtubePlayer: 			YoutubePlayer;
 
-	private joining: boolean = false;
-	private joined: boolean = false;
-	private terminationCountdown?: NodeJS.Timeout;
-	private looping: boolean = false;
+	private 	joining: 					boolean = 			false;
+	private 	joined: 						boolean = 			false;
+	private 	terminationCountdown?: 	NodeJS.Timeout;
+	private 	looping: 					boolean = 			false;
 
 	constructor(
-		private client: MusicBot,
-		public id: string,
-		public guild: discord.Guild,
+		private client: 				MusicBot,
+		public id: 						string,
+		public guild: 					discord.Guild,
 		public interactionChannel: discord.SendableChannels,
-		createdBy: User
+		createdBy: 						User
 	) {
-		this.queue = new MusicQueue(this.client, this);
-		this.youtubePlayer = new YoutubePlayer(this.client, this);
+		this.queue = 				new MusicQueue(this.client, this);
+		this.youtubePlayer = 	new YoutubePlayer(this.client, this);
 
-		this.creationDate = new Date();
-		this.updateDate = new Date();
-
-		this.createdBy = createdBy.id;
-		this.updatedBy = createdBy.id;
+		this.createdBy = 			createdBy.id;
+		this.updatedBy = 			createdBy.id;
 	}
 
+	/**
+	 * Destroy session in @param time_ms ms
+	 */
 	public setTerminationCountdown(time_ms: number) {
 		if (this.terminationCountdown) return;
 
@@ -49,18 +49,27 @@ export default class MusicSession {
 			this.client.getSessionManager().destroySession(this);
 		}, time_ms);
 	}
+	/**
+	 * Cancel leaving channel
+	 */
 	public cancelTerminationCountdown() {
 		if (this.terminationCountdown === undefined) return;
 
 		clearTimeout(this.terminationCountdown);
 		this.terminationCountdown = undefined;
 	}
+	/**
+	 * Set default text chanel
+	 */
 	public setInteractionChannel(channel: discord.TextBasedChannel) {
 		if (!channel.isSendable())
 			throw 'Interaction channel is not sendable.';
 
 		this.interactionChannel = channel;
 	}
+	/**
+	 * Change active voice channel
+	 */
 	public setActiveVoiceChannel(channel: discord.VoiceBasedChannel) {
 		this.channel = channel;
 	}
@@ -83,6 +92,7 @@ export default class MusicSession {
 			try {
 				assert(this.channel != undefined, 'Cannot join channel because it\'s undefined.');
 
+				// Clear old connections
 				this.connection?.destroy();
 				this.player?.stop(true);
 
