@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 
@@ -14,17 +14,15 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 	public async dispatch(interaction: DiscordChatInteraction) {
 		const voiceChannel = interaction.member.voice.channel;
 
-		this.client.log.write('Join command: ', interaction.user.displayName);
-
 		if (!voiceChannel) {
-			const embed = this.client.getInteractionManager().generateErrorEmbed("Nejsi připojen do žádného kanálu!");
+			const embed = this.client.interactionManager.generateErrorEmbed("Nejsi připojen do žádného kanálu!");
 			interaction.reply({ embeds: [embed], ephemeral: true });
 			return false;
 		}
 
 		const interactionChannel = interaction.channel;
 		if (!interactionChannel) {
-			const embed = this.client.getInteractionManager().generateErrorEmbed("Neplatný textový channel.");
+			const embed = this.client.interactionManager.generateErrorEmbed("Neplatný textový channel.");
 			interaction.reply({ embeds: [embed], ephemeral: true });
 			return false;
 		}
@@ -37,7 +35,7 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 			}
 
 			if (voiceChannel.id == session.getVoiceChannel()?.id) {
-				const embed = this.client.getInteractionManager().generateErrorEmbed("Bot už již je připojen.");
+				const embed = this.client.interactionManager.generateErrorEmbed("Bot už již je připojen.");
 				interaction.reply({ embeds: [embed], ephemeral: true });
 				return false;
 			}
@@ -50,14 +48,19 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 			session.setActiveVoiceChannel(voiceChannel);
 			const r = await session.join(interaction);
 
-			this.client.log.write('Join result: ', r);
-
 			if (!r) {
 				this.client.handleError("Bot nelze připojit, zkuste to později.", interaction);
 				return false;
 			}
 
-			interaction.reply('Bot připojen.');
+			const joinEmbed = new EmbedBuilder()
+				.setTitle('Bot byl úspěšně připojen!')
+				.setFields([
+					{ name: 'Kanál', value: voiceChannel.name }
+				])
+				.setColor(this.client.interactionManager.DEFAULT_SUCCESS_EMBED_COLOR);
+
+			this.client.interactionManager.respondEmbed(interaction, [joinEmbed]);
 			return true;
 		} catch (err) {
 			this.client.handleError(err, interaction);

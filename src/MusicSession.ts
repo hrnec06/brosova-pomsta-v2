@@ -1,4 +1,4 @@
-import discord, { User } from 'discord.js';
+import discord, { EmbedBuilder, User } from 'discord.js';
 import MusicBot from "./MusicBot";
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, DiscordGatewayAdapterCreator, joinVoiceChannel, NoSubscriberBehavior, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice';
 import MusicQueue from './MusicQueue';
@@ -44,8 +44,10 @@ export default class MusicSession {
 		if (this.terminationCountdown) return;
 
 		this.terminationCountdown = setTimeout(() => {
-			console.log('Automatically destroying session.');
-			this.interactionChannel?.send('Opustili jste mě sráči, lívuju.');
+			const embed = new EmbedBuilder()
+				.setTitle('Bot byl odpojen kvůli neaktivitě.')
+			this.interactionChannel.send({embeds: [embed]});
+
 			this.client.getSessionManager().destroySession(this);
 		}, time_ms);
 	}
@@ -80,7 +82,7 @@ export default class MusicSession {
 		return this.player;
 	}
 	public isJoined(): boolean {
-		return this.joined;
+		return this.joined && !this.joining;
 	}
 	public join(interaction?: DiscordInteraction) {
 		return new Promise<boolean>((resolve, error) => {

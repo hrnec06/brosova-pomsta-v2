@@ -34,7 +34,7 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 		const query = interaction.options.getString("video", true);
 		const playNow = interaction.options.getBoolean("hned", false) ?? false;
 
-		this.client.log.write('Play command: ', query, playNow, interaction.user.displayName);
+		// this.client.log.write('Play command: ', query, playNow, interaction.user.displayName);
 
 		return await this.play(interaction, query, playNow);
 	}
@@ -43,14 +43,14 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 		const voiceChannel = interaction.member.voice.channel;
 
 		if (!voiceChannel) {
-			const embed = this.client.getInteractionManager().generateErrorEmbed("Nejsi připojen do žádného kanálu!");
+			const embed = this.client.interactionManager.generateErrorEmbed("Nejsi připojen do žádného kanálu!");
 			interaction.reply({ embeds: [embed], ephemeral: true });
 			return false;
 		}
 
 		const interactionChannel = interaction.channel;
 		if (!interactionChannel) {
-			const embed = this.client.getInteractionManager().generateErrorEmbed("Neplatný textový channel.");
+			const embed = this.client.interactionManager.generateErrorEmbed("Neplatný textový channel.");
 			interaction.reply({ embeds: [embed], ephemeral: true });
 			return false;
 		}
@@ -65,17 +65,21 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 			}
 
 			var itemToQueue: QueuedItem;
-			if (this.client.youtubeAPI.isPlaylist(query)) {
+
+			var playlistID: string | null;
+			if ((playlistID = this.client.youtubeAPI.getPlaylistIdFromURL(query)) != null) {
 				// Is playlist
 				this.client.log.write('Query is playlist: ', true);
 
-				const id = this.client.youtubeAPI.getPlaylistIdFromURL(query);
-				if (!id)
-					throw new Error('Youtube playlist ID failed to parse.');
+				const details = await this.client.youtubeAPI.fetchPlaylistDetails(playlistID);
+				if (!details) {
+					this.client.handleError('Playlist nebyl nalezen.', interaction);
+					return false;
+				}
 
-				const videos = await this.client.youtubeAPI.fetchVideosFromPlaylist(id);
+				const videos = await this.client.youtubeAPI.fetchVideosFromPlaylist(playlistID);
 				if (!videos.length) {
-					const embed = this.client.getInteractionManager().generateErrorEmbed(`Playlist neobsahuje žádná videa.`);
+					const embed = this.client.interactionManager.generateErrorEmbed(`Playlist neobsahuje žádná videa.`);
 					interaction.followUp({ embeds: [embed], ephemeral: true });
 					return false;
 				}
@@ -88,7 +92,10 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 						name: interaction.member?.user.username ?? interaction.user.displayName,
 						avatarURL: interaction.user.avatarURL() || undefined
 					},
-					videoList: videos
+					videoList: videos,
+					playlistDetails: details,
+					playlistID: playlistID,
+					activeVideo: undefined
 				} as QueuedPlaylist;
 
 				// const result = await session.getQueue().pushToQueue(queuedPlaylist, playNow, interaction);
@@ -97,7 +104,7 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 
 				if (!videoID) {
 					console.log("No video found");
-					const embed = this.client.getInteractionManager().generateErrorEmbed(`Video "${query}" nebylo nazeleno.`);
+					const embed = this.client.interactionManager.generateErrorEmbed(`Video "${query}" nebylo nazeleno.`);
 					interaction.followUp({ embeds: [embed], ephemeral: true });
 					return false;
 				}
@@ -115,15 +122,24 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 			}
 
 			session.setActiveVoiceChannel(voiceChannel);
-			await session.getQueue().pushToQueue(itemToQueue, interaction, playNow);
+			const playingNow = await session.getQueue().pushToQueue(itemToQueue, interaction, playNow);
 
 			var embed: EmbedBuilder;
 			if (Utils.BotUtils.isVideoItem(itemToQueue)) {
-				embed = this.client.getInteractionManager().generateVideoEmbed(itemToQueue, false, false) as EmbedBuilder;
+				embed = this.client.interactionManager.generateVideoEmbed(itemToQueue) as EmbedBuilder;
 			}
 			else {
-				embed = this.client.getInteractionManager().generatePlaylistEmbed(itemToQueue) as EmbedBuilder;
+				embed = this.client.interactionManager.generatePlaylistEmbed(itemToQueue) as EmbedBuilder;
 			}
+
+			const embedQueue = playingNow
+										? undefined
+										: new EmbedBuilder()
+											.setTitle(Utils.BotUtils.isVideoItem(itemToQueue) ? 'Video bylo přidáno do fronty.' : 'Playlist byl přidán do fronty.')
+											.setColor(this.client.interactionManager.DEFAULT_SUCCESS_EMBED_COLOR);
+
+			await this.client.interactionManager.respondEmbed(interaction, [embedQueue, embed]);
+
 			return true;
 		} catch (err) {
 			this.client.handleError(err, interaction);

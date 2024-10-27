@@ -44,7 +44,7 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 	}
 	public async dispatch(interaction: DiscordChatInteraction) {
 		const user = interaction.member.user;
-		if (!user || user.id !== this.client.config.getSystemConfig().developerUserID) {
+		if (!user || user.id !== this.client.config.getSystem().developerUserID) {
 			this.client.handleError('K tomuto příkazu nemáš přístup!', interaction);
 			return false;
 		}
@@ -79,8 +79,9 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 		switch (subcommand) {
 			case 'list': {
 				const sessions = this.client.getSessionManager().getSessionsAsArray();
+
 				if (!sessions.length) {
-					interaction.reply({content: 'Nejsou aktivní žádné sessiony!', ephemeral: true})
+					await this.client.interactionManager.respondEmbed(interaction, 'Nejsou aktivní žádné sessiony!', undefined, this.client.interactionManager.DEFAULT_ERROR_EMBED_COLOR, {ephermal: true, ephermalRequired: true});
 					return false;
 				}
 
@@ -99,13 +100,14 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 					}
 				}
 
-				await interaction.reply({content: batches[0], ephemeral: true});
+				await this.client.interactionManager.respond(interaction, {content: batches[0], ephemeral: true}, {ephermalRequired: true});
 
 				for (let i = 1; i < batches.length; i++) {
 					if (!interaction.channel)
 						throw 'Unable to list sessions! Interaction channel is undefined.';
 
-					await interaction.followUp({content: batches[i], ephemeral: true});
+					await this.client.interactionManager.respond(interaction, {content: batches[i], ephemeral: true});
+					// await interaction.followUp({content: batches[i], ephemeral: true});
 				}
 
 				return true;
@@ -119,7 +121,7 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 
 				const activeItem = session.getQueue().getActiveItem();
 				const isPlaylist = activeItem ? Utils.BotUtils.isPlaylistItem(activeItem).toString() : '-';
-				const activeVideoLabel: string = session.getQueue().getActiveVideo()?.videoDetails.title ?? '-';
+				const activeVideoLabel: string = (await session.getQueue().getActiveVideo())?.videoDetails.title ?? '-';
 
 				const creatorUser = this.client.client.users.cache.get(session.createdBy);
 				const updateUser = this.client.client.users.cache.get(session.updatedBy);
@@ -155,12 +157,12 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 						{ name: '\u200b', value: '\u200b' },
 						{ name: 'Loop', value: session.isLooping() ? 'true' : 'false', inline: true },
 					])
-					.setColor(this.client.getInteractionManager().DEFAULT_EMBED_COLOR)
+					.setColor(this.client.interactionManager.DEFAULT_EMBED_COLOR)
 					.setFooter({
 						text: session.id
-					})
+					});
 
-				await interaction.reply({embeds: [embed], ephemeral: true});
+				await this.client.interactionManager.respond(interaction, [ embed ], { ephermal: true, ephermalRequired: true });
 				return true;
 			}
 			case 'destroy': {
@@ -170,12 +172,13 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 				if (!session)
 					throw 'Session nebyla nalezena.';
 
+				const sessionName = session.guild.name;
+
 				const r = this.client.getSessionManager().destroySession(session);
 				if (!r)
 					throw 'Session nemohla být zrušena!';
 
-				interaction.reply({content: 'Session zrušena!', ephemeral: true});
-
+				await this.client.interactionManager.respondEmbed(interaction, `Session '${sessionName}' byla zrušena!`, undefined, this.client.interactionManager.DEFAULT_SUCCESS_EMBED_COLOR, {ephermal: true, ephermalRequired: true});
 				return true;
 			}
 			default: {
@@ -186,80 +189,11 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 		return false;
 	}
 
-	public onAutoComplete(interaction: AutocompleteInteraction<CacheType>, session: MusicSession | null) {
+	public onAutoComplete(interaction: AutocompleteInteraction<CacheType>) {
 		const sessions = this.client.getSessionManager().getSessionsAsArray();
 		interaction.respond(sessions.map(session => ({
 			name: session.guild.name,
 			value: session.id
 		})));
-	}
-
-	public async dispatchOld(interaction: DiscordChatInteraction) {
-		if (interaction.member.id !== '470952100726308864') {
-			this.client.handleError('K tomuto příkazu má přístup jen vybraná skupina lidí!', interaction);
-			return false;
-		}
-
-		const type = interaction.options.getString('type', true);
-
-		console.log(interaction);
-
-		switch (type) {
-			case 'sessions': {
-				const sessions = this.client.getSessionManager().getSessionsAsArray();
-				const table = new Utils.TableGenerator();
-				table.addColumn('Session ID').addColumn('Guild');
-
-				const batches: string[] = [];
-
-				if (!sessions.length) {
-					interaction.reply('No active sessions.');
-					return true;
-				}
-
-				for (let i = 0; i < sessions.length; i++) {
-					const newBatch = i % 10 === 9;
-					const session = sessions[i];
-
-					table.addRow(session.id, session.guild.name);
-
-					if (newBatch || i >= sessions.length - 1) {
-						batches.push(codeBlock(table.build()));
-						table.clear('rows');
-					}
-				}
-
-				for (let i = 1; i < batches.length; i++) {
-					const batch = batches[i];
-					await interaction.channel?.send(batch);
-				}
-
-				interaction.reply(batches[0]);
-				break;
-			}
-			case 'session': {
-				var id: string;
-				try {
-					id = interaction.options.getString('arg1', true);
-				} catch (err) {
-					interaction.reply('Session ID is required.');
-					return false;
-				}
-
-				const session = this.client.getSessionManager().getSessionByID(id);
-				if (!session) {
-					interaction.reply('Session not found.');
-					return false;
-				}
-
-				console.log(session);
-
-				interaction.reply('Session.');
-			}
-			default: {
-				this.client.handleError('Invalid debug type.', interaction);
-			}
-		}
-		return true;
 	}
 }

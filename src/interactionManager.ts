@@ -1,9 +1,11 @@
-import { EmbedBuilder, RGBTuple } from "@discordjs/builders";
+import { EmbedBuilder, hyperlink, RGBTuple } from "@discordjs/builders";
 import MusicBot from "./MusicBot";
 import { error } from "console";
 import Utils from "./utils";
 import discord, { Embed } from 'discord.js';
+import assert from "node:assert";
 
+type EmbedColors = 'success' | 'error';
 interface EmbedOptions {
 	title?: string,
 	color?: number,
@@ -21,6 +23,7 @@ interface RespondOptions {
 export default class InteractionManager {
 	public readonly DEFAULT_EMBED_COLOR = 0x158ced;
 	public readonly DEFAULT_ERROR_EMBED_COLOR = 0xeb4034;
+	public readonly DEFAULT_SUCCESS_EMBED_COLOR = 0x33cc4c;
 
 	constructor(private client: MusicBot) {
 	}
@@ -94,20 +97,26 @@ export default class InteractionManager {
 		return embed;
 	}
 
-	public generateVideoEmbed(queuedVideo: QueuedVideo, fromQueue: boolean, fromPlaylist: boolean): EmbedBuilder {
+	public generateVideoEmbed(queuedVideo: QueuedVideo, fromPlaylist?: QueuedPlaylist): EmbedBuilder {
 		const embed = new EmbedBuilder()
 			.setColor(this.DEFAULT_EMBED_COLOR)
 			.setTitle(queuedVideo.videoDetails.title)
 			.setURL(`https://youtube.com/watch?v=${queuedVideo.videoDetails.videoId}`)
-			.setDescription(queuedVideo.videoDetails.author.name)
+			.setDescription(hyperlink(queuedVideo.videoDetails.author.name, queuedVideo.videoDetails.author.url))
 			.setImage(queuedVideo.videoDetails.thumbnail)
 			.setAuthor({
 				name: queuedVideo.user.name,
 				iconURL: queuedVideo.user.avatarURL
 			})
 			.addFields([
-				{ name: 'Délka videa', value: Utils.formatTime(queuedVideo.videoDetails.length * 1000) }
+				{ name: 'Délka videa', value: Utils.formatTime(queuedVideo.videoDetails.length * 1000), inline: true },
 			]);
+
+		if (fromPlaylist) {
+			embed.addFields([
+				{ name: 'Playlist', value: `${fromPlaylist.playlistDetails.title} (#${fromPlaylist.position + 1})`, inline: true }
+			]);
+		}
 
 		if (queuedVideo.videoDetails.author.avatar) {
 			embed.setThumbnail(queuedVideo.videoDetails.author.avatar);
@@ -119,23 +128,24 @@ export default class InteractionManager {
 	public generatePlaylistEmbed(queuedPlaylist: QueuedPlaylist) {
 		const embed = new EmbedBuilder()
 			.setColor(this.DEFAULT_EMBED_COLOR)
-			.setTitle(queuedPlaylist.id)
-			.setURL(`https://youtube.com/watch?list=${queuedPlaylist.id}v=${queuedPlaylist.videoList[queuedPlaylist.position]}`)
-			// .setDescription(discord.hyperlink(queuedVideo.videoDetails.author.name, queuedVideo.videoDetails.author.url))
+			.setTitle(queuedPlaylist.playlistDetails.title)
+			.setURL(`https://youtube.com/playlist?list=${queuedPlaylist.playlistID}`)
+			.setDescription(queuedPlaylist.playlistDetails.description ? queuedPlaylist.playlistDetails.description : null)
 			.setAuthor({
 				name: queuedPlaylist.user.name,
 				iconURL: queuedPlaylist.user.avatarURL
 			})
-			// .setImage(queuedVideo.videoDetails.thumbnail)
+			.setImage(queuedPlaylist.playlistDetails.thumbnails.standard.url)
 			// .setThumbnail(queuedVideo.videoDetails.author.avatar ?? null)
 			.addFields([
-				{ name: 'Délka playlistu', value: queuedPlaylist.videoList.length.toString() }
+				{ name: 'Délka playlistu', value: queuedPlaylist.videoList.length.toString(), inline: true },
+				{ name: 'Autor', value: hyperlink(queuedPlaylist.playlistDetails.title, 'https://youtube.com'), inline: true }
 			]);
 
 		return embed;
 	}
 
-	public async respond(interaction: DiscordInteraction | undefined, message: EmbedBuilder | Error | string | discord.InteractionReplyOptions, options?: RespondOptions) {
+	public async respond(interaction: DiscordInteraction | undefined, message: EmbedBuilder[] | Error | string | discord.InteractionReplyOptions, options?: RespondOptions) {
 		var payload: discord.BaseMessageOptions;
 		if (typeof message === 'string') {
 			payload = {content: message }
@@ -144,24 +154,23 @@ export default class InteractionManager {
 			const errEmbed = this.generateErrorEmbed(message, { interaction });
 			payload = { embeds: [ errEmbed ] }
 		}
-		else if (message instanceof EmbedBuilder) {
-			payload = { embeds: [ message ] }
+		else if (Array.isArray(message)) {
+			payload = { embeds: message }
 		}
 		else {
-			this.client.handleError('Invalid response message.', interaction);
-			return false;
+			payload = message;
 		}
 
-		if (interaction && interaction.isRepliable() && !interaction.replied) {
+		if (interaction && interaction.isRepliable() && !interaction.replied) {			
 
 			if (interaction.deferred)
-				return await interaction.followUp({...payload, ephemeral: options?.ephermal});
+				return await interaction.followUp({ ephemeral: options?.ephermal, ...payload });
 			else
-			return await interaction.reply({...payload, ephemeral: options?.ephermal});
+			return await interaction.reply({ ephemeral: options?.ephermal, ...payload });
 		}
 		else if (options?.ephermalRequired) {
 			const errorEmbed = this.generateErrorEmbed(new Error('ERROR: Message cannot be sent; Option ephermal is required but impossible.'), { interaction });
-			await this.respond(interaction, errorEmbed, {...options, devChannelFallback: true});
+			await this.respond(interaction, [errorEmbed], {...options, devChannelFallback: true});
 			return false;
 		}
 		else if (interaction && interaction.channel && interaction.channel.isSendable()) {
@@ -173,32 +182,45 @@ export default class InteractionManager {
 		else {
 			console.log(interaction !== undefined, interaction?.isRepliable(), interaction?.isRepliable() && !interaction.replied, interaction?.channel, interaction?.channel?.isSendable(), options?.devChannelFallback, this.client.config.developerChannel);
 			const errorEmbed = this.generateErrorEmbed(new Error('Unable to send the message, all methods are unreachable.'), { interaction });
-			await this.respond(interaction, errorEmbed, {...options, devChannelFallback: true});
+			await this.respond(interaction, [errorEmbed], {...options, devChannelFallback: true});
 			return false;
 		}
 	}
 
-
 	// Embed builder from args
-	public async respondEmbed(interaction: DiscordInteraction, title: string, 						description?: string, 				color?: RGBTuple | number, options?: RespondOptions): Promise<false | discord.Message<boolean> | discord.InteractionResponse<boolean>>;
+	public async respondEmbed(interaction: DiscordInteraction | undefined, title: string, 											description?: string, 				color?: RGBTuple | number | EmbedColors,	options?: RespondOptions): Promise<false | discord.Message<boolean> | discord.InteractionResponse<boolean>>;
 	// Embed builder
-	public async respondEmbed(interaction: DiscordInteraction, embed: EmbedBuilder, 				options?: RespondOptions): Promise<false | discord.Message<boolean> | discord.InteractionResponse<boolean>>;
-	public async respondEmbed(interaction: DiscordInteraction, arg1: string | EmbedBuilder,	arg2?: string | RespondOptions, 	arg3?: RGBTuple | number, 	arg4?: RespondOptions): Promise<false | discord.Message<boolean> | discord.InteractionResponse<boolean>> {
+	public async respondEmbed(interaction: DiscordInteraction | undefined, embed: (EmbedBuilder | undefined)[], 			options?: RespondOptions): Promise<false | discord.Message<boolean> | discord.InteractionResponse<boolean>>;
+	public async respondEmbed(interaction: DiscordInteraction | undefined, arg1: string | (EmbedBuilder | undefined)[],	arg2?: string | RespondOptions, 	arg3?: RGBTuple | number | EmbedColors, 	arg4?: RespondOptions): Promise<false | discord.Message<boolean> | discord.InteractionResponse<boolean>> {
 		const options: RespondOptions | undefined = arg4 ? arg4 : typeof arg2 != 'string' ? arg2 : undefined;
 
-		if (arg1 instanceof EmbedBuilder) {
-			return await this.respond(interaction, arg1, options);
+		if (Array.isArray(arg1)) {
+			const embeds = arg1.filter((e): e is EmbedBuilder => e != undefined);
+			if (!embeds.length) return false;
+
+			return await this.respond(interaction, embeds, options);
 		}
-		else if (typeof arg2 == 'string') {
+		else {
 			const embed = new EmbedBuilder().setTitle(arg1);
-			if (arg2)
+			if (arg2 && typeof arg2 == 'string') {
 				embed.setDescription(arg2);
-			if (arg3)
+			}
+			if (arg3 != undefined) {
+				if (typeof arg3 == 'string') {
+					switch (arg3) {
+						case 'success': {
+							arg3 = this.DEFAULT_SUCCESS_EMBED_COLOR;
+							break;
+						}
+						case 'error': {
+							arg3 = this.DEFAULT_ERROR_EMBED_COLOR;
+						}
+					}
+				}
 				embed.setColor(arg3);
+			}
 
-			return await this.respond(interaction, embed, options);
+			return await this.respond(interaction, [embed], options);
 		}
-
-		return false;
 	}
 }

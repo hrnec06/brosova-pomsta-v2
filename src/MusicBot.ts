@@ -22,11 +22,11 @@ import Log from './Log';
 type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'autocompleteInteraction' | 'configLoad';
 
 interface MusicBotEventsMap extends Record<MusicBotEvents, any> {
-	'load': discord.Client,
-	'configLoad': IBotConfig,
-	'buttonInteraction': discord.ButtonInteraction<discord.CacheType>,
-	'stringSelectInteraction': discord.StringSelectMenuInteraction<discord.CacheType>,
-	'autocompleteInteraction': discord.AutocompleteInteraction<discord.CacheType>
+	'load': 								discord.Client,
+	'configLoad': 						IBotConfig,
+	'buttonInteraction': 			discord.ButtonInteraction<discord.CacheType>,
+	'stringSelectInteraction': 	discord.StringSelectMenuInteraction<discord.CacheType>,
+	'autocompleteInteraction': 	discord.AutocompleteInteraction<discord.CacheType>
 }
 
 export default class MusicBot {
@@ -37,7 +37,7 @@ export default class MusicBot {
 	private 	commands: 				(DiscordCommand & DiscordCommandInterface)[];
 
 	public 	readonly config: 		BotConfig;
-	private 	interactionManager: 	InteractionManager;
+	public 	interactionManager: 	InteractionManager;
 	private 	sessionManager: 		SessionManager;
 	public 	youtubeAPI: 			YoutubeAPI;
 	public 	log: 						Log;
@@ -48,9 +48,9 @@ export default class MusicBot {
 
 
 	constructor(
-		private BOT_TOKEN: string,
-		private CLIENT_ID: string,
-		GOOGLE_API_KEY: string | undefined
+		private BOT_TOKEN: 		string,
+		private CLIENT_ID:	 	string,
+		GOOGLE_API_KEY: 			string | undefined
 	) {
 		// Init bot
 		const BOT_LOAD_START = Date.now();
@@ -85,28 +85,32 @@ export default class MusicBot {
 			this.emit('load', this.client);
 			console.log(`\n\nBot logged-in as ${this.client.user?.username} after ${((Date.now() - BOT_LOAD_START) / 1000).toFixed(2)}s.`);
 
-			try {
-				// Activity
-				this.client.user?.setActivity('yOuR pHOnE liNgiNg', { type: discord.ActivityType.Custom });
-			} catch (err) {
-				console.error('An error occured while loading the bot.');
-				console.error(err);
-			}
-
 			this.registerCommands();
-			this.config.getConfigAsync(() => this.config.loadDeveloperVariables());
+			this.config.getConfigAsync((config) => {
+				try {
+					// Setting developer channels and user.
+					this.config.loadDeveloperVariables()
+					
+					// Activity
+					this.client.user?.setActivity(config.environment == 'production' ? 'yOuR pHOnE liNgiNg' : 'Bot running in development mode.', { type: discord.ActivityType.Custom });
+				} catch (err) {
+					console.error('An error occured while loading the bot.');
+					console.error(err);
+				}
+			});
 		});
 
 		// Voice update (disconnect, connect)
 		this.client.on('voiceStateUpdate', (oldState, newState) => {
 			const session = this.sessionManager.getSession(newState.guild);
-			if (!session || !session.isJoined())
-				return;
+			if (!session) return;
 			
 			// Did bot leave / join
 			const isBot = newState.member?.id === this.client.user?.id;
 			// Is leave event?
 			const isLeave = oldState.channel != null && newState.channel == null;
+
+			console.log(isLeave, isBot);
 
 			// On bot disconnect
 			if (isLeave && isBot)
@@ -138,9 +142,6 @@ export default class MusicBot {
 		// Debug
 	}
 
-	public getInteractionManager() {
-		return this.interactionManager;
-	}
 	public getSessionManager() {
 		return this.sessionManager;
 	}
@@ -181,7 +182,14 @@ export default class MusicBot {
 				return;
 			}
 
-			const execResult = await command.dispatch(interaction, session);
+			var execResult: boolean;
+			try {
+				execResult = await command.dispatch(interaction, session);
+			}
+			catch (error) {
+				execResult = false;
+				this.handleError(error, interaction);
+			}
 
 			if (execResult) {
 				let session_ = (session || this.sessionManager.getSession(interaction));
@@ -284,24 +292,8 @@ export default class MusicBot {
 	 */
 	public async handleError(error: any, interaction?: DiscordInteraction) {
 		const embed = this.interactionManager.generateErrorEmbed(error, { interaction: interaction });
-
-		this.log.write('Error: ', [error, interaction]);
-
-		if (interaction && interaction.isRepliable() && !interaction.replied) {
-			if (interaction.deferred) {
-				await interaction.followUp({ embeds: [embed], ephemeral: true });
-			} else {
-				await interaction.reply({ embeds: [embed], ephemeral: true });
-			}
-		}
-		else if (interaction && interaction.channel && interaction.channel.isSendable()) {
-			await interaction.channel.send({ embeds: [embed] });
-		}
-		else if (this.config.developerChannel) {
-			await this.config.developerChannel.send({ embeds: [embed] });
-		}
-		else
-			console.error(error);
+		console.log(error, interaction);
+		await this.interactionManager.respond(interaction, [embed], { devChannelFallback: true, ephermal: true });
 	}
 
 	/**

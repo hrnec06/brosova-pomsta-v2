@@ -33,16 +33,16 @@ export default class YoutubeAPI {
 
 		const URL = `https://www.googleapis.com/youtube/v3/search?part=snippet&fields=items&type=video&maxResults=${1}&q=${encodeURIComponent(name)}&key=${this.GOOGLE_API_KEY}`;
 		const response = await fetch(URL);
-		const result = (await response.json() as YoutubeSearchResponse<YoutubeVideoSearchItem>);
+		const result = (await response.json() as YoutubeAPIResponse<YoutubeVideoSearchItem>);
 
 		if (!result || !result.items) throw new Error('Youtube API returned an invalid response.');
-
 		if (!result.items.length) return null;
+
 		return result.items[0];
 	}
 
 	public getPlaylistIdFromURL(url: string) {
-		const regex = /^(?:http(?:s)?:\/\/)?(?:www\.)?youtu(?:\.be|be\.com)\/(?:.+)?&list=(.+?)(?:&|$)/;
+		const regex = /^(?:http(?:s)?:\/\/)?(?:www\.)?youtu(?:\.be|be\.com)\/(?:.+)?(?:&|\?)list=(.+?)(?:&|$)/;
 		return regex.exec(url)?.[1] ?? null;
 	}
 
@@ -50,10 +50,23 @@ export default class YoutubeAPI {
 		return this.getPlaylistIdFromURL(query) !== null;
 	}
 
+	public async fetchPlaylistDetails(playlistID: string) {
+		const fields = 'items(snippet(title,description,thumbnails(standard),channelTitle))';
+		const URL = `https://youtube.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistID}&maxResults=${1}&fields=${fields}&key=${this.GOOGLE_API_KEY}`;
+		const response = await fetch(URL);
+		const result = (await response.json() as YoutubeAPIResponse<YoutubePlaylistInfoResponse>);
+
+		if (!result || !result.items) throw new Error('Youtube API returned an invalid response.');
+		if (!result.items.length) return null;
+
+		const playlistDetails = result.items[0].snippet;
+
+		return playlistDetails;
+	}
 	public async fetchVideosFromPlaylist(playlistID: string) {
 		const URL = `https://youtube.googleapis.com/youtube/v3/playlistItems?part=contentDetails&maxResults=${50}&playlistId=${playlistID}&key=${this.GOOGLE_API_KEY}`;
 		const response = await fetch(URL);
-		const result = (await response.json() as YoutubeSearchResponse<YoutubePlaylistSearchItem>);
+		const result = (await response.json() as YoutubeAPIResponse<YoutubePlaylistSearchItem>);
 
 		if (!result || !result.items) throw new Error('Youtube API returned an invalid response.');
 

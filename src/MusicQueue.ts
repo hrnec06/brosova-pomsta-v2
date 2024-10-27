@@ -1,3 +1,4 @@
+import { EmbedBuilder } from "discord.js";
 import MusicBot from "./MusicBot";
 import MusicSession from "./MusicSession";
 import Utils from "./utils";
@@ -11,7 +12,11 @@ export default class MusicQueue {
 
 	}
 
-	public async pushToQueue(item: QueuedItem, interaction: DiscordInteraction, playNow: boolean) {
+	/**
+	 * 
+	 * @returns Play right away
+	 */
+	public async pushToQueue(item: QueuedItem, interaction: DiscordInteraction, playNow: boolean): Promise<boolean> {
 		this.queue.push(item);
 
 		if (!this.session.isJoined()) {
@@ -22,27 +27,19 @@ export default class MusicQueue {
 		playNow = playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 1);
 		if (playNow) {
 			this.position = this.queue.length - 1;
-			await this.playActiveVideo(false, Utils.BotUtils.isPlaylistItem(item), interaction);
+			await this.playActiveVideo(false, Utils.BotUtils.isPlaylistItem(item) ? item : undefined, false, interaction);
+
+			return true;
 		}
+		return false;
 	}
 
-	public async playNext(interaction?: DiscordInteraction, skipPlaylist: boolean = false): Promise<false | QueuedVideo> {
+	public async stepQueue(interaction?: DiscordInteraction, skipPlaylist: boolean = false, announceStep: boolean = true): Promise<false | QueuedVideo> {
 		const activeItem = this.getActiveItem();
 
-		var nextVideo: QueuedVideo;
-
-		if (activeItem != null && Utils.BotUtils.isPlaylistItem(activeItem) && activeItem.position && activeItem.position < activeItem.videoList.length && skipPlaylist !== true) {
+		if (activeItem != null && Utils.BotUtils.isPlaylistItem(activeItem) && activeItem.position < activeItem.videoList.length - 1 && skipPlaylist !== true) {
 			// Play playlist video
-			const videoInfo = await this.client.youtubeAPI.getVideoDataByID(activeItem.videoList[activeItem.position]);
 			activeItem.position += 1;
-
-			nextVideo = {
-				id: uuidv4(),
-				user: activeItem.user,
-				videoDetails: videoInfo
-			}
-
-			activeItem.activeVideo = nextVideo;
 		}
 		else {
 			// Play non-playlist video
@@ -53,63 +50,35 @@ export default class MusicQueue {
 			this.position = newPos;
 
 			if (Utils.BotUtils.isPlaylistItem(nextItem)) {
-				return await this.playNext(interaction, false);
+				return await this.stepQueue(interaction, false, announceStep);
 			}
-			else if (Utils.BotUtils.isVideoItem(nextItem)) {
-				nextVideo = nextItem;
-			}
-			else
-				throw new Error('Invalid queue item.');
 		}
 
-		await this.playActiveVideo(true, activeItem != null && Utils.BotUtils.isPlaylistItem(activeItem));
-
-		return nextVideo;
+		return await this.playActiveVideo(true, activeItem && Utils.BotUtils.isPlaylistItem(activeItem) ? activeItem : undefined, announceStep, interaction);
 	}
 
-	private async playActiveVideo(fromQueue: boolean, fromPlaylist: boolean, interaction?: DiscordInteraction) {
-		const video = this.getActiveVideo();
+	private async playActiveVideo(fromQueue: boolean, fromPlaylist: QueuedPlaylist | undefined, announceStep: boolean, interaction?: DiscordInteraction) {
+		const video = await this.getActiveVideo();
 		if (!video)
 			throw 'ERROR: Failed to play active video, active video is undefined.';
 
-		// Announce next video
-		const videoEmbed = this.client.getInteractionManager().generateVideoEmbed(video, fromQueue, fromPlaylist);
-		this.session.interactionChannel.send({embeds: [videoEmbed]});
-
 		// Play video
-		return await this.session.youtubePlayer.play(video, interaction);
+		this.session.youtubePlayer.play(video, interaction);
+
+		// Announce next video
+		if (announceStep) {
+			const videoEmbed = this.client.interactionManager.generateVideoEmbed(video, fromPlaylist);
+			await this.session.interactionChannel.send({embeds: [ videoEmbed ]});
+		}
+
+		return video;
 	}
-
-	// public async pushToQueue(video: QueuedItem, playNow: boolean, interaction: DiscordInteraction) {
-	// 	this.queue.push(video);
-
-	// 	if (!this.session.isJoined()) {
-	// 		const r = await this.session.join(interaction);
-	// 		if (!r) throw 'Bot nelze připojit na server.';
-	// 	}
-
-	// 	// Should start playing right away
-	// 	if (playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 2)) {
-	// 		this.position = this.queue.length - 1;
-
-	// 		if (Utils.BotUtils.isPlaylistItem(video)) {
-	// 			return await this.playNext(interaction) !== false;
-	// 		}
-	// 		else if (Utils.BotUtils.isVideoItem(video)) {
-	// 			await this.session.youtubePlayer.play(video, interaction);
-	// 		}
-	// 		else
-	// 			throw new Error('Invalid queue item.');
-	// 	}
-
-	// 	return true;
-	// }
 
 	public getActiveItem(): QueuedItem | null {
 		return this.queue[this.position] ?? null;
 	}
 
-	public getActiveVideo(): QueuedVideo | null {
+	public async getActiveVideo(): Promise<QueuedVideo | null> {
 		const activeItem = this.getActiveItem();
 		if (!activeItem) return null;
 
@@ -117,6 +86,23 @@ export default class MusicQueue {
 			return activeItem;
 		}
 		else {
+			if (activeItem.videoList.length - 1 < activeItem.position) return null;
+
+			const nextID = activeItem.videoList[activeItem.position];
+
+			if (!activeItem.activeVideo || activeItem.activeVideo.videoDetails.videoId !== nextID) {
+				if (activeItem.videoList.length - 1 < activeItem.position) return null;
+
+				const videoInfo = await this.client.youtubeAPI.getVideoDataByID(nextID);
+				const video: QueuedVideo = {
+					id: uuidv4(),
+					user: activeItem.user,
+					videoDetails: videoInfo
+				};
+				activeItem.activeVideo = video;
+
+			}
+
 			return activeItem.activeVideo ?? null;
 		}
 	}
