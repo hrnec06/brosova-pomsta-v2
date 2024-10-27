@@ -2,7 +2,7 @@ import { EmbedBuilder, RGBTuple } from "@discordjs/builders";
 import MusicBot from "./MusicBot";
 import { error } from "console";
 import Utils from "./utils";
-import discord from 'discord.js';
+import discord, { Embed } from 'discord.js';
 
 interface EmbedOptions {
 	title?: string,
@@ -10,6 +10,12 @@ interface EmbedOptions {
 	description?: string,
 	stamp?: boolean,
 	interaction?: DiscordInteraction
+}
+
+interface RespondOptions {
+	ephermal?: boolean,
+	ephermalRequired?: boolean,
+	devChannelFallback?: boolean
 }
 
 export default class InteractionManager {
@@ -127,5 +133,72 @@ export default class InteractionManager {
 			]);
 
 		return embed;
+	}
+
+	public async respond(interaction: DiscordInteraction | undefined, message: EmbedBuilder | Error | string | discord.InteractionReplyOptions, options?: RespondOptions) {
+		var payload: discord.BaseMessageOptions;
+		if (typeof message === 'string') {
+			payload = {content: message }
+		}
+		else if (message instanceof Error) {
+			const errEmbed = this.generateErrorEmbed(message, { interaction });
+			payload = { embeds: [ errEmbed ] }
+		}
+		else if (message instanceof EmbedBuilder) {
+			payload = { embeds: [ message ] }
+		}
+		else {
+			this.client.handleError('Invalid response message.', interaction);
+			return false;
+		}
+
+		if (interaction && interaction.isRepliable() && !interaction.replied) {
+
+			if (interaction.deferred)
+				return await interaction.followUp({...payload, ephemeral: options?.ephermal});
+			else
+			return await interaction.reply({...payload, ephemeral: options?.ephermal});
+		}
+		else if (options?.ephermalRequired) {
+			const errorEmbed = this.generateErrorEmbed(new Error('ERROR: Message cannot be sent; Option ephermal is required but impossible.'), { interaction });
+			await this.respond(interaction, errorEmbed, {...options, devChannelFallback: true});
+			return false;
+		}
+		else if (interaction && interaction.channel && interaction.channel.isSendable()) {
+			return await interaction.channel.send(payload);
+		}
+		else if (options?.devChannelFallback && this.client.config.developerChannel) {
+			return await this.client.config.developerChannel.send(payload);
+		}
+		else {
+			console.log(interaction !== undefined, interaction?.isRepliable(), interaction?.isRepliable() && !interaction.replied, interaction?.channel, interaction?.channel?.isSendable(), options?.devChannelFallback, this.client.config.developerChannel);
+			const errorEmbed = this.generateErrorEmbed(new Error('Unable to send the message, all methods are unreachable.'), { interaction });
+			await this.respond(interaction, errorEmbed, {...options, devChannelFallback: true});
+			return false;
+		}
+	}
+
+
+	// Embed builder from args
+	public async respondEmbed(interaction: DiscordInteraction, title: string, 						description?: string, 				color?: RGBTuple | number, options?: RespondOptions): Promise<false | discord.Message<boolean> | discord.InteractionResponse<boolean>>;
+	// Embed builder
+	public async respondEmbed(interaction: DiscordInteraction, embed: EmbedBuilder, 				options?: RespondOptions): Promise<false | discord.Message<boolean> | discord.InteractionResponse<boolean>>;
+	public async respondEmbed(interaction: DiscordInteraction, arg1: string | EmbedBuilder,	arg2?: string | RespondOptions, 	arg3?: RGBTuple | number, 	arg4?: RespondOptions): Promise<false | discord.Message<boolean> | discord.InteractionResponse<boolean>> {
+		const options: RespondOptions | undefined = arg4 ? arg4 : typeof arg2 != 'string' ? arg2 : undefined;
+
+		if (arg1 instanceof EmbedBuilder) {
+			return await this.respond(interaction, arg1, options);
+		}
+		else if (typeof arg2 == 'string') {
+			const embed = new EmbedBuilder().setTitle(arg1);
+			if (arg2)
+				embed.setDescription(arg2);
+			if (arg3)
+				embed.setColor(arg3);
+
+			return await this.respond(interaction, embed, options);
+		}
+
+		return false;
 	}
 }
