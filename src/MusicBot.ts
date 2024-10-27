@@ -1,7 +1,7 @@
 import discord, { ActionRowBuilder, ButtonBuilder, ButtonStyle, GatewayIntentBits } from 'discord.js';
 import DiscordCommand, { DiscordCommandInterface } from './model/commands';
-import InteractionManager from './interactionManager';
-import SessionManager from './sessionManager';
+import InteractionManager from './components/InteractionManager';
+import SessionManager from './components/SessionManager';
 import fs from 'fs/promises';
 import PingCommand from './commands/Ping';
 import PlayCommand from './commands/Play';
@@ -16,8 +16,8 @@ import LoopCommand from './commands/Loop';
 import YoutubeAPI from './api/YoutubeAPI';
 import AdminCommand from './commands/Admin';
 import assert from 'node:assert';
-import BotConfig, { IBotConfig } from './BotConfig';
-import Log from './Log';
+import BotConfig, { IBotConfig } from './components/BotConfig';
+import Log from './utils/Log';
 
 type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'autocompleteInteraction' | 'configLoad';
 

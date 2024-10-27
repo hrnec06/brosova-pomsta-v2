@@ -1,9 +1,9 @@
 import moment from "moment";
-import MusicBot from "./MusicBot";
+import MusicBot from "../MusicBot";
 import fs, { WriteStream } from 'fs';
 import assert from "node:assert";
 import discord from 'discord.js';
-import Utils from "./utils";
+import Utils from ".";
 
 type LogDataPrimitive = string | boolean | number;
 interface LogDataObject {

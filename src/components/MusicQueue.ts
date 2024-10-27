@@ -1,7 +1,7 @@
 import { EmbedBuilder } from "discord.js";
-import MusicBot from "./MusicBot";
+import MusicBot from "../MusicBot";
 import MusicSession from "./MusicSession";
-import Utils from "./utils";
+import Utils from "../utils";
 import { v4 as uuidv4} from 'uuid';
 
 export default class MusicQueue {

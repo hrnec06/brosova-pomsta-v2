@@ -1,5 +1,5 @@
 import discord, { EmbedBuilder, User } from 'discord.js';
-import MusicBot from "./MusicBot";
+import MusicBot from "../MusicBot";
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, DiscordGatewayAdapterCreator, joinVoiceChannel, NoSubscriberBehavior, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice';
 import MusicQueue from './MusicQueue';
 import YoutubePlayer from './YoutubePlayer';

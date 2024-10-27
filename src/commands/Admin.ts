@@ -3,7 +3,7 @@ import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import moment from "moment";
 import Utils from "../utils";
-import MusicSession from "../MusicSession";
+import MusicSession from "../components/MusicSession";
 
 export default class AdminCommand extends DiscordCommand implements DiscordCommandInterface {
 	constructor(private client: MusicBot) {

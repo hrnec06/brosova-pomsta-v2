@@ -1,5 +1,5 @@
 import discord, { Interaction, SharedSlashCommand } from "discord.js";
-import MusicSession from "../MusicSession";
+import MusicSession from "../components/MusicSession";
 
 type OnRunCallback = (interaction: DiscordChatInteraction, session: MusicSession | null) => boolean | Promise<boolean>;
 type onAutocompleteCallback = (interaction: discord.AutocompleteInteraction<discord.CacheType>, session: MusicSession | null) => void

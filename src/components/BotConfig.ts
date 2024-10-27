@@ -1,5 +1,5 @@
 import deepmerge from "deepmerge";
-import MusicBot from "./MusicBot";
+import MusicBot from "../MusicBot";
 import discord from 'discord.js';
 import fs from 'fs';
 import moment from "moment";
