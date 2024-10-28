@@ -1,4 +1,4 @@
-import { EmbedBuilder, hyperlink, RGBTuple } from "@discordjs/builders";
+import { ActionRowBuilder, EmbedBuilder, hyperlink, RGBTuple } from "@discordjs/builders";
 import MusicBot from "../MusicBot";
 import { error } from "console";
 import Utils from "../utils";
@@ -18,6 +18,7 @@ interface RespondOptions {
 	ephermal?: boolean,
 	ephermalRequired?: boolean,
 	devChannelFallback?: boolean
+	components?: (ActionRowBuilder<any>[])
 }
 
 export default class InteractionManager {
@@ -161,16 +162,26 @@ export default class InteractionManager {
 			payload = message;
 		}
 
+		if (options?.components) {
+			payload.components = options.components;
+		}
+
 		if (interaction && interaction.isRepliable() && !interaction.replied) {			
 
 			if (interaction.deferred)
 				return await interaction.followUp({ ephemeral: options?.ephermal, ...payload });
 			else
-			return await interaction.reply({ ephemeral: options?.ephermal, ...payload });
+				return await interaction.reply({ ephemeral: options?.ephermal, ...payload });
 		}
 		else if (options?.ephermalRequired) {
 			const errorEmbed = this.generateErrorEmbed(new Error('ERROR: Message cannot be sent; Option ephermal is required but impossible.'), { interaction });
-			await this.respond(interaction, [errorEmbed], {...options, devChannelFallback: true});
+			await this.respond(
+				interaction,
+				[errorEmbed],
+				{
+					...options,
+					devChannelFallback: true
+				});
 			return false;
 		}
 		else if (interaction && interaction.channel && interaction.channel.isSendable()) {
