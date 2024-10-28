@@ -2,15 +2,26 @@ import discord, { Interaction, SharedSlashCommand } from "discord.js";
 import MusicSession from "../components/MusicSession";
 
 type OnRunCallback = (interaction: DiscordChatInteraction, session: MusicSession | null) => boolean | Promise<boolean>;
-type onAutocompleteCallback = (interaction: discord.AutocompleteInteraction<discord.CacheType>, session: MusicSession | null) => void
+type OnAutocompleteCallback = (interaction: discord.AutocompleteInteraction<discord.CacheType>, session: MusicSession | null) => void
+type OnButtonCallback = (interaction: discord.ButtonInteraction<discord.CacheType>, id: string, session: MusicSession | null) => void
 export default abstract class DiscordCommand {
+	public readonly valid: boolean;
+
 	constructor(
 		private command: SharedSlashCommand,
 		public name: string
-	) { }
+	) { 
+		this.valid = /^\w+$/.test(name);
+		if (!this.valid)
+			console.error(`Command name '${name}' includes some illegal characters!`);
+	}
 
 	public getCommand(): discord.RESTPostAPIChatInputApplicationCommandsJSONBody {
 		return this.command.toJSON();
+	}
+
+	public makeButtonPath(id: string): string {
+		return `bp.cmd.${this.name}.${id}`;
 	}
 
 	public match(interaction: DiscordInteraction): boolean {
@@ -22,5 +33,6 @@ export default abstract class DiscordCommand {
 
 export interface DiscordCommandInterface {
 	dispatch: OnRunCallback,
-	onAutoComplete?: onAutocompleteCallback
+	onAutoComplete?: OnAutocompleteCallback,
+	onButton?: OnButtonCallback
 }

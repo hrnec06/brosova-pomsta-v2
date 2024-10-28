@@ -18,6 +18,7 @@ import AdminCommand from './commands/Admin';
 import assert from 'node:assert';
 import BotConfig, { IBotConfig } from './components/BotConfig';
 import Log from './utils/Log';
+import QueueCommand from './commands/Queue';
 
 type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'autocompleteInteraction' | 'configLoad';
 
@@ -75,7 +76,8 @@ export default class MusicBot {
 			new JoinCommand(this),
 			new StopComamnd(this),
 			new LoopCommand(this),
-			new AdminCommand(this)
+			new AdminCommand(this),
+			new QueueCommand(this)
 			// new ConfigCommand(this)
 		];
 
@@ -168,8 +170,13 @@ export default class MusicBot {
 	}
 
 	private async handleInteraction(interaction: DiscordInteraction) {
-		const command = this.commands.find((command) => command.match(interaction));
+		var command = this.commands.find((command) => command.match(interaction)) ?? null;
 		const session = this.sessionManager.getSession(interaction);
+
+		if (command && !command.valid) {
+			this.handleError(`Příkaz '${command.name}' není aktivní.`, interaction);
+			return;
+		}
 
 		// Command
 		if (interaction.isChatInputCommand()) {
@@ -206,8 +213,11 @@ export default class MusicBot {
 		}
 		// Button
 		else if (interaction.isButton()) {
+			const buttonPath = this.parseButtonPath(interaction.customId);
+			if (buttonPath && (command = this.getCommand(buttonPath.commandName)) && command.onButton)
+				command.onButton(interaction, buttonPath.id, session);
+
 			this.emit('buttonInteraction', interaction);
-			this.handleError('Buttons are not supported!', interaction);
 		}
 		// Select menu
 		else if (interaction.isStringSelectMenu()) {
@@ -246,7 +256,7 @@ export default class MusicBot {
 	}
 
 	private async registerCommands() {
-		const parsedCommands = this.commands.map(command => command.getCommand());
+		const parsedCommands = this.commands.filter(command => command.valid).map(command => command.getCommand());
 		const stringifiedCommands = JSON.stringify(parsedCommands);
 
 		// Skip registation if commands didnt update
@@ -278,6 +288,16 @@ export default class MusicBot {
 			fs.rm(FILE_NAME);
 			this.handleError(err);
 		}
+	}
+
+	private parseButtonPath(path: string): { commandName: string, id: string } | null {
+		const match = /^bp\.cmd\.(\w+)\.(\w+)$/.exec(path);
+		if (!match) return null;
+
+		return {
+			commandName: match[1],
+			id: match[2]
+		};
 	}
 
 	public getCommand<C extends (DiscordCommand & DiscordCommandInterface)>(name: string): C | null {
