@@ -1,4 +1,5 @@
 import { GuildMember } from "discord.js";
+import moment from "moment";
 
 namespace Utils {
 	export function entries<A extends string | number | symbol, B>(object: Partial<Record<A, B>>): [A, B][] {
@@ -158,7 +159,7 @@ namespace Utils {
 		return isNaN(parsedValue) ? defaultValue : parsedValue;
 	}
 
-	type TimeUnits = 'year' | 'day' | 'hour' | 'minute' | 'second';
+	type TimeUnits = 'year' | 'month' | 'day' | 'hour' | 'minute' | 'second'; 
 	export function formatTime(time: number | Date, shortUnits: (boolean | ((ms: number) => boolean)) = true, omitExtraUnits: boolean = true, highestUnit: boolean = false, units?: Partial<Record<TimeUnits, [string, string, string]>>): string {
 		const ms = typeof time == 'number' ? time : time.getTime();
 		const _short = typeof shortUnits == 'boolean' ? shortUnits : shortUnits.call(null, ms);
@@ -187,6 +188,12 @@ namespace Utils {
 		}
 
 		return (unit(years, 'year') + unit(days, 'day') + unit(hours, 'hour') + unit(minutes, 'minute') + unit(seconds, 'second')).trim();
+	}
+
+	export function formatTime2(time: number) {
+		const duration = moment.duration(time);
+
+		return [duration.days(), duration.hours(), `${duration.minutes()}:${duration.seconds().toString().padStart(2, '0')}`].filter(u => u != 0).join(':');
 	}
 
 	export function num2bin(n: number): string {
