@@ -302,6 +302,16 @@ namespace Utils {
 		return builder;
 	}
 
+	export function randomNumber(min: number, max: number, decimals: boolean = false): number {
+		if (min > max) return NaN;
+
+		let a = Math.random() * (max - min + 1);
+		if (!decimals)
+			a = Math.floor(a);
+
+		return min + a;
+	}
+
 	interface TableGeneratorOptions {
 		joinSymbol: string,
 		verticalSymbol: string,
