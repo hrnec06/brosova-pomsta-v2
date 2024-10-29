@@ -214,8 +214,13 @@ export default class MusicBot {
 		// Button
 		else if (interaction.isButton()) {
 			const buttonPath = this.parseButtonPath(interaction.customId);
-			if (buttonPath && (command = this.getCommand(buttonPath.commandName)) && command.onButton)
-				command.onButton(interaction, buttonPath.id, session);
+			if (buttonPath && (command = this.getCommand(buttonPath.commandName)) && command.onButton) {
+				try {
+					command.onButton(interaction, buttonPath.id, session);
+				} catch (err) {
+					this.handleError(err, interaction);
+				}
+			}
 
 			this.emit('buttonInteraction', interaction);
 		}
@@ -225,8 +230,13 @@ export default class MusicBot {
 		}
 		// Autocomplete
 		else if (interaction.isAutocomplete()) {
-			if (command && command.onAutoComplete)
-				command.onAutoComplete(interaction, session);
+			if (command && command.onAutoComplete) {
+				try {
+					command.onAutoComplete(interaction, session);
+				} catch (err) {
+					this.handleError(err, interaction);
+				}
+			}
 
 			this.emit('autocompleteInteraction', interaction);
 		}
