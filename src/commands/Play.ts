@@ -1,10 +1,11 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { AutocompleteInteraction, CacheType, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import Utils from "../utils";
 import ytdl from '@distube/ytdl-core';
 import { GOOGLE_API_KEY } from "..";
 import { v4 as uuidv4 } from 'uuid';
+import MusicSession from "../components/MusicSession";
 
 export default class PlayCommand extends DiscordCommand implements DiscordCommandInterface {
 	constructor(private client: MusicBot) {
@@ -16,6 +17,7 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 					.setName("video")
 					.setDescription("url nebo název videa")
 					.setRequired(true)
+					.setAutocomplete(true)
 				)
 				.addBooleanOption(option => option
 					.setName("hned")
@@ -37,6 +39,10 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 		// this.client.log.write('Play command: ', query, playNow, interaction.user.displayName);
 
 		return await this.play(interaction, query, playNow);
+	}
+
+	public onAutoComplete(interaction: AutocompleteInteraction<CacheType>, session: MusicSession | null) {
+		console.log(interaction);
 	}
 
 	public async play(interaction: DiscordChatInteraction, query: string, playNow: boolean): Promise<boolean> {

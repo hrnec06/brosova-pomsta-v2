@@ -107,3 +107,23 @@ declare interface YoutubePlaylistInfoResponse {
 		title: string
 	}
 }
+
+
+
+interface MyJSON {
+	programFiles: {
+		microsoft: {
+			edge: {
+				application: {
+					msedge: string,
+					pwahelper: number,
+					delegatedneco: boolean,
+				},
+				msedgerecovery: {
+					msedge: string[],
+					edd?: MyJSON
+				}
+			}
+		}
+	}
+}
