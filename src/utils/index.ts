@@ -1,4 +1,4 @@
-import { GuildMember } from "discord.js";
+import { GuildMember, hyperlink } from "discord.js";
 import moment from "moment";
 
 namespace Utils {
@@ -419,6 +419,45 @@ namespace Utils {
 	}
 
 	export namespace BotUtils {
+		export function getTitle(item: QueuedItem): string {
+			if (isVideoItem(item)) {
+				return item.videoDetails.title;
+			}
+			else if (isPlaylistItem(item)) {
+				return item.playlistDetails.title;
+			}
+			else
+				throw 'Invalid item.';
+		}
+
+		export function getLink(item: QueuedItem): string {
+			const base = 'https://youtube.com/';
+
+			if (isVideoItem(item)) {
+				return base + 'watch?v=' + item.videoDetails.videoId;
+			}
+			else if (isPlaylistItem(item)) {
+				return base + 'playlist?list=' + item.playlistID;
+			}
+			else
+				throw 'Invalid item.';
+		}
+
+		export function buildHyperlink(item: QueuedItem): string {
+			return hyperlink(getTitle(item), getLink(item));
+		}
+
+		export function getThumbnail(item: QueuedItem): string {
+			if (isVideoItem(item)) {
+				return item.videoDetails.thumbnail;
+			}
+			else if (isPlaylistItem(item)) {
+				return item.playlistDetails.thumbnails.standard.url;
+			}
+			else
+				throw 'Invalid item.';
+		}
+
 		export function isValidMember(member: any): member is GuildMember {
 			return member instanceof GuildMember;
 		}
