@@ -123,7 +123,9 @@ export default class MusicBot {
 				const voice = session.getVoiceChannel();
 				assert(voice != undefined, 'Voice channel is not defined.');
 
-				if (voice.members.size > 1)
+				const nonBotMembers = voice.members.filter(member => !member.user.bot);
+
+				if (nonBotMembers.size > 1)
 					session.cancelTerminationCountdown();
 			}
 
@@ -132,7 +134,9 @@ export default class MusicBot {
 				const voice = session.getVoiceChannel();
 				assert(voice != undefined, 'Voice channel is not defined.');
 
-				if (voice.members.size <= 1)
+				const nonBotMembers = voice.members.filter(member => !member.user.bot);
+
+				if (nonBotMembers.size <= 1)
 					session.setTerminationCountdown(5000);
 			}
 		});
