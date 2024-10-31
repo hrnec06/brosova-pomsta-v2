@@ -3,7 +3,7 @@ import MusicSession from "../components/MusicSession";
 
 type OnRunCallback = (interaction: DiscordChatInteraction, session: MusicSession | null) => boolean | Promise<boolean>;
 type OnAutocompleteCallback = (interaction: discord.AutocompleteInteraction<discord.CacheType>, session: MusicSession | null) => void
-type OnButtonCallback = (interaction: discord.ButtonInteraction<discord.CacheType>, id: string, session: MusicSession | null) => void
+type OnButtonCallback = (interaction: discord.ButtonInteraction<discord.CacheType>, path: ButtonPath, session: MusicSession | null) => void
 export default abstract class DiscordCommand {
 	public readonly valid: boolean;
 
@@ -20,8 +20,19 @@ export default abstract class DiscordCommand {
 		return this.command.toJSON();
 	}
 
-	public makeButtonPath(id: string): string {
-		return `bp.cmd.${this.name}.${id}`;
+	public makeButtonPath(id: string, action?: string): string {
+		const neutralize = (s: string) => s.replace(/[^\w]/g, '');
+
+		id = neutralize(id);
+		action = action ? neutralize(action) : undefined;
+
+		if (id == '' || action == '')
+			throw 'Invalid button path.';
+
+		const base = 'bp.cmd.' + this.name;
+		if (action)
+			return `${base}.${action}[${id}]`;
+		return `${base}.${id}`;
 	}
 
 	public match(interaction: DiscordInteraction): boolean {
