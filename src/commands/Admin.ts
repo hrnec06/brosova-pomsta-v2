@@ -247,7 +247,8 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 							title: `Title ${i}`,
 							uploadDate: new Date().toString(),
 							videoId: 'VLP_tnnDGSQ'
-						}
+						},
+						addedAt: Date.now()
 					}
 					if (Math.random() > .5) {
 						// Video
@@ -273,7 +274,8 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 									}
 								},
 							},
-							videoList: ['VLP_tnnDGSQ', 'VLP_tnnDGSQ', 'VLP_tnnDGSQ']
+							videoList: ['VLP_tnnDGSQ', 'VLP_tnnDGSQ', 'VLP_tnnDGSQ'],
+							addedAt: Date.now()
 						};
 
 						items.push(playlist);
