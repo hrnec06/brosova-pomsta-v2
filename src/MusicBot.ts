@@ -214,9 +214,10 @@ export default class MusicBot {
 		// Button
 		else if (interaction.isButton()) {
 			const buttonPath = this.parseButtonPath(interaction.customId);
+
 			if (buttonPath && (command = this.getCommand(buttonPath.commandName)) && command.onButton) {
 				try {
-					command.onButton(interaction, buttonPath.id, session);
+					command.onButton(interaction, buttonPath, session);
 				} catch (err) {
 					this.handleError(err, interaction);
 				}
@@ -300,13 +301,15 @@ export default class MusicBot {
 		}
 	}
 
-	private parseButtonPath(path: string): { commandName: string, id: string } | null {
-		const match = /^bp\.cmd\.(\w+)\.(\w+)$/.exec(path);
+	private parseButtonPath(path: string): ButtonPath | null {
+		const match = /^bp\.cmd\.(\w+)\.(\w+)(?:\[(\w+)\])?$/.exec(path);
 		if (!match) return null;
 
 		return {
 			commandName: match[1],
-			id: match[2]
+			action: match[3] != undefined ? match[2] : undefined,
+			id: match[3] != undefined ? match[3] : match[2],
+			path: path
 		};
 	}
 

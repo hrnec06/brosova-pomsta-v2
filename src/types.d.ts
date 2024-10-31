@@ -10,19 +10,26 @@ declare interface UserDetails {
 	avatarURL?: string
 }
 
-declare interface QueuedVideo {
-	videoDetails: YtdlInfo,
+declare interface UserSimple {
 	id: string,
-	user: UserDetails
+	name: string
 }
 
-declare interface QueuedPlaylist {
+interface QueuedItemBase {
+	id: string,
+	user: UserDetails,
+	addedAt: number
+}
+
+declare interface QueuedVideo extends QueuedItemBase {
+	videoDetails: YtdlInfo,
+}
+
+declare interface QueuedPlaylist extends QueuedItemBase {
 	playlistID: string,
 	videoList: string[],
 	playlistDetails: YoutubePlaylistInfoResponse['snippet'],
 	position: number,
-	user: UserDetails,
-	id: string,
 	activeVideo?: QueuedVideo,
 }
 
@@ -108,22 +115,9 @@ declare interface YoutubePlaylistInfoResponse {
 	}
 }
 
-
-
-interface MyJSON {
-	programFiles: {
-		microsoft: {
-			edge: {
-				application: {
-					msedge: string,
-					pwahelper: number,
-					delegatedneco: boolean,
-				},
-				msedgerecovery: {
-					msedge: string[],
-					edd?: MyJSON
-				}
-			}
-		}
-	}
+interface ButtonPath {
+	commandName: string,
+	id: string,
+	path: string,
+	action?: string,
 }
