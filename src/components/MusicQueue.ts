@@ -6,10 +6,16 @@ import { v4 as uuidv4} from 'uuid';
 
 export default class MusicQueue {
 	public position: number = 0;
-	public queue: QueuedItem[] = [];
+	private queue: QueuedItem[] = [];
 
 	constructor(private client: MusicBot, private session: MusicSession) {
 
+	}
+
+	public getQueueAsArray(filterDeleted: boolean = true): QueuedItem[] {
+		if (!filterDeleted) return this.queue;
+
+		return this.queue.filter(item => !item.deleted);
 	}
 
 	/**
@@ -20,11 +26,12 @@ export default class MusicQueue {
 		this.queue.push(item);
 
 		if (!this.session.isJoined()) {
-			const r = await this.session.join(interaction);
+			const r = await this.session.join();
 			if (!r) throw 'Bot nelze připojit na server.';
 		}
 
-		playNow = playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 1);
+		console.log('playnow', this.position, this.queue.length);
+		playNow = playNow || (!this.session.youtubePlayer.isPlaying() && this.position >= this.queue.length - 2);
 		if (playNow) {
 			this.position = this.queue.length - 1;
 			await this.playActiveVideo(false, Utils.BotUtils.isPlaylistItem(item) ? item : undefined, false, interaction);
@@ -43,11 +50,12 @@ export default class MusicQueue {
 		}
 		else {
 			// Play non-playlist video
-			const newPos = this.position + 1;
-			if (newPos > this.queue.length - 1) return false;
-
-			const nextItem = this.queue[newPos];
-			this.position = newPos;
+			const nextPosition = this.position + 1;
+			
+			if (nextPosition > this.queue.length - 1) return false;
+			
+			this.position = nextPosition;
+			const nextItem = this.queue[nextPosition];
 
 			if (Utils.BotUtils.isPlaylistItem(nextItem)) {
 				return await this.stepQueue(interaction, false, announceStep);
@@ -98,7 +106,8 @@ export default class MusicQueue {
 					id: uuidv4(),
 					user: activeItem.user,
 					videoDetails: videoInfo,
-					addedAt: activeItem.addedAt
+					addedAt: activeItem.addedAt,
+					deleted: false
 				};
 				activeItem.activeVideo = video;
 

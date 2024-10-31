@@ -128,7 +128,7 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 			}
 
 			session.setActiveVoiceChannel(voiceChannel);
-			const playingNow = await session.getQueue().pushToQueue(itemToQueue, interaction, playNow);
+			const playingNow = await session.queue.pushToQueue(itemToQueue, interaction, playNow);
 
 			var embed: EmbedBuilder;
 			if (Utils.BotUtils.isVideoItem(itemToQueue)) {

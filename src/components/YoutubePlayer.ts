@@ -60,11 +60,11 @@ export default class YoutubePlayer {
 
 	public async handleEnd(forced: boolean = false) {
 		if (this.session.isLooping()) {
-			const activeVideo = await this.session.getQueue().getActiveVideo();
+			const activeVideo = await this.session.queue.getActiveVideo();
 			activeVideo && this.play(activeVideo);
 			return;
 		}
 		this.playing = false;
-		this.session.getQueue().stepQueue();
+		this.session.queue.stepQueue();
 	}
 }

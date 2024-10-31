@@ -18,7 +18,8 @@ declare interface UserSimple {
 interface QueuedItemBase {
 	id: string,
 	user: UserDetails,
-	addedAt: number
+	addedAt: number,
+	deleted: boolean
 }
 
 declare interface QueuedVideo extends QueuedItemBase {

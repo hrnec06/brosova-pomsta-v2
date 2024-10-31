@@ -43,11 +43,11 @@ export default class SkipCommand extends DiscordCommand implements DiscordComman
 
 			const skipPlaylist = interaction.options.getBoolean('playlist', false) ?? false;
 
-			const currentItem = session.getQueue().getActiveItem();
-			const currentVideo = await session.getQueue().getActiveVideo();
+			const currentItem = session.queue.getActiveItem();
+			const currentVideo = await session.queue.getActiveVideo();
 
 			var nextVideo: QueuedVideo | false;
-			if ((nextVideo = await session.getQueue().stepQueue(interaction, skipPlaylist, false)) === false) {
+			if ((nextVideo = await session.queue.stepQueue(interaction, skipPlaylist, false)) === false) {
 				const player = session.getPlayer();
 				if (!player) {
 					// Player unavailable error
@@ -66,7 +66,7 @@ export default class SkipCommand extends DiscordCommand implements DiscordComman
 					return false;
 				}
 			} else {
-				const activeItem = session.getQueue().getActiveItem();
+				const activeItem = session.queue.getActiveItem();
 				const embed = this.client.interactionManager.generateVideoEmbed(nextVideo, activeItem && Utils.BotUtils.isPlaylistItem(activeItem) ? activeItem : undefined) as EmbedBuilder;
 				
 				var skipText: string;

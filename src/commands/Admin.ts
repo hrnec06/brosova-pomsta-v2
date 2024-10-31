@@ -138,9 +138,9 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 				if (!session)
 					throw 'Session nebyla nalezena.';
 
-				const activeItem = session.getQueue().getActiveItem();
+				const activeItem = session.queue.getActiveItem();
 				const isPlaylist = activeItem ? Utils.BotUtils.isPlaylistItem(activeItem).toString() : '-';
-				const activeVideoLabel: string = (await session.getQueue().getActiveVideo())?.videoDetails.title ?? '-';
+				const activeVideoLabel: string = (await session.queue.getActiveVideo())?.videoDetails.title ?? '-';
 
 				const creatorUser = this.client.client.users.cache.get(session.createdBy);
 				const updateUser = this.client.client.users.cache.get(session.updatedBy);
@@ -248,7 +248,8 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 							uploadDate: new Date().toString(),
 							videoId: 'VLP_tnnDGSQ'
 						},
-						addedAt: Date.now()
+						addedAt: Date.now(),
+						deleted: false
 					}
 					if (Math.random() > .5) {
 						// Video
@@ -275,14 +276,15 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 								},
 							},
 							videoList: ['VLP_tnnDGSQ', 'VLP_tnnDGSQ', 'VLP_tnnDGSQ'],
-							addedAt: Date.now()
+							addedAt: Date.now(),
+							deleted: false
 						};
 
 						items.push(playlist);
 					}
 				}
 
-				session.getQueue().queue.push(...items);
+				session.queue.getQueueAsArray().push(...items);
 				this.client.interactionManager.respondEmbed(interaction, `Bylo přidáno ${amount} položek do queue.`, undefined, undefined, {ephermal: true})
 				return true;
 			}
