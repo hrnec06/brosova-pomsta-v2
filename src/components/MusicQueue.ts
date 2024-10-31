@@ -97,7 +97,8 @@ export default class MusicQueue {
 				const video: QueuedVideo = {
 					id: uuidv4(),
 					user: activeItem.user,
-					videoDetails: videoInfo
+					videoDetails: videoInfo,
+					addedAt: activeItem.addedAt
 				};
 				activeItem.activeVideo = video;
 
