@@ -218,7 +218,7 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 				const amount = interaction.options.getInteger('amount', true);
 				const session = this.client.getSessionManager().getSession(interaction);
 				if (!session) {
-					this.client.handleError('Není aktivní session.');
+					this.client.handleError('Není aktivní session.', interaction);
 					return false;
 				}
 
@@ -251,7 +251,7 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 						addedAt: Date.now(),
 						deleted: false
 					}
-					if (Math.random() > .5) {
+					if (Math.random() > .2) {
 						// Video
 						items.push(video);
 					}
@@ -284,7 +284,7 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 					}
 				}
 
-				session.queue.getQueueAsArray().push(...items);
+				session.queue.queue.push(...items);
 				this.client.interactionManager.respondEmbed(interaction, `Bylo přidáno ${amount} položek do queue.`, undefined, undefined, {ephermal: true})
 				return true;
 			}
