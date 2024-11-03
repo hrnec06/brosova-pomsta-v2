@@ -10,18 +10,18 @@ export default class MusicSession {
 	private 	connection?: 				VoiceConnection;
 	private 	channel?: 					discord.VoiceBasedChannel;
 
-	public 	creationDate: 				Date = 				new Date();
-	public 	updateDate: 				Date =				new Date();
+	public 	creationDate: 				Date 					= new Date();
+	public 	updateDate: 				Date 					= new Date();
 	public 	createdBy: 					string;
 	public 	updatedBy: 					string;
 
-	private 	queue: 						MusicQueue;
+	public 	queue: 						MusicQueue;
 	public 	youtubePlayer: 			YoutubePlayer;
 
-	private 	joining: 					boolean = 			false;
-	private 	joined: 						boolean = 			false;
+	private 	joining: 					boolean 				= false;
+	private 	joined: 						boolean 				= false;
 	private 	terminationCountdown?: 	NodeJS.Timeout;
-	private 	looping: 					boolean = 			false;
+	private 	looping: 					boolean 				= false;
 
 	constructor(
 		private client: 				MusicBot,
@@ -30,11 +30,11 @@ export default class MusicSession {
 		public interactionChannel: discord.SendableChannels,
 		createdBy: 						User
 	) {
-		this.queue = 				new MusicQueue(this.client, this);
-		this.youtubePlayer = 	new YoutubePlayer(this.client, this);
+		this.queue 					= new MusicQueue(this.client, this);
+		this.youtubePlayer 		= new YoutubePlayer(this.client, this);
 
-		this.createdBy = 			createdBy.id;
-		this.updatedBy = 			createdBy.id;
+		this.createdBy 			= createdBy.id;
+		this.updatedBy 			= createdBy.id;
 	}
 
 	/**
@@ -75,16 +75,13 @@ export default class MusicSession {
 	public setActiveVoiceChannel(channel: discord.VoiceBasedChannel) {
 		this.channel = channel;
 	}
-	public getQueue() {
-		return this.queue;
-	}
 	public getPlayer() {
 		return this.player;
 	}
 	public isJoined(): boolean {
 		return this.joined && !this.joining;
 	}
-	public join(interaction?: DiscordInteraction) {
+	public join() {
 		return new Promise<boolean>((resolve, error) => {
 			if (this.joining) {
 				return error('Bot is already joining.');

@@ -46,7 +46,7 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 			}
 
 			session.setActiveVoiceChannel(voiceChannel);
-			const r = await session.join(interaction);
+			const r = await session.join();
 
 			if (!r) {
 				this.client.handleError("Bot nelze připojit, zkuste to později.", interaction);
