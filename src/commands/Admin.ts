@@ -10,7 +10,6 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 	constructor(private client: MusicBot) {
 		super(
 			new SlashCommandBuilder()
-				.setName('admin')
 				.setDescription('Příkaz pro správu bota. Přístup mají pouze vybraní uživatelé.')
 				.addSubcommandGroup(group => group
 					.setName('session')

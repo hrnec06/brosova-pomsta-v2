@@ -6,7 +6,6 @@ export default class PingCommand extends DiscordCommand implements DiscordComman
 	constructor(private client: MusicBot) {
 		super(
 			new SlashCommandBuilder()
-				.setName('ping')
 				.setDescription('Pong?'),
 			'ping'
 		)

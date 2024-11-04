@@ -10,7 +10,6 @@ export default class LoopCommand extends DiscordCommand implements DiscordComman
 	constructor(private client: MusicBot) {
 		super(
 			new SlashCommandBuilder()
-				.setName('loop')
 				.setDescription('Přepne loopování hudby.')
 				.addBooleanOption(option => option
 					.setName('state')

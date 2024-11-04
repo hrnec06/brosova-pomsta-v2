@@ -6,7 +6,6 @@ export default class StopComamnd extends DiscordCommand implements DiscordComman
 	constructor(private client: MusicBot) {
 		super(
 			new SlashCommandBuilder()
-				.setName('stop')
 				.setDescription('Zastaví bota a zruší session. Vhodné pro odbugování v případě bugu.'),
 			'stop'
 		);

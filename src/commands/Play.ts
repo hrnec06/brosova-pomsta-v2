@@ -11,7 +11,6 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 	constructor(private client: MusicBot) {
 		super(
 			new SlashCommandBuilder()
-				.setName('play')
 				.setDescription('Přehrát nebo přidat video do fronty.')
 				.addStringOption(option => option
 					.setName("video")

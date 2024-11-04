@@ -7,7 +7,6 @@ export default class SkipCommand extends DiscordCommand implements DiscordComman
 	constructor(private client: MusicBot) {
 		super(
 			new SlashCommandBuilder()
-				.setName('skip')
 				.addBooleanOption(option => option
 					.setName('playlist')
 					.setDescription('Přeskočit celý playlist')

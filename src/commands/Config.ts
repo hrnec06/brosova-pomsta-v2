@@ -17,7 +17,6 @@ export default class ConfigCommand extends DiscordCommand implements DiscordComm
     constructor(private client: MusicBot) {
         super(
             new SlashCommandBuilder()
-                .setName('config')
                 .setDescription('Nastavení configu')
                 .addStringOption(input => input
                     .setName("action")

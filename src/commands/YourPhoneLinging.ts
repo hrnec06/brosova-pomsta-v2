@@ -7,7 +7,6 @@ export default class YourPhoneLingingCommand extends DiscordCommand implements D
     constructor(private client: MusicBot) {
         super(
             new SlashCommandBuilder()
-                .setName('yourphonelinging')
                 .setDescription('YoUr PHoNe LiNGinG'),
             'yourphonelinging'
         );

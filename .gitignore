@@ -6,3 +6,4 @@ dist/
 bot-config.json
 logs/
 node_modules.zip
+src/utils/archive.ts

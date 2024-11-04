@@ -6,7 +6,6 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 	constructor(private client: MusicBot) {
 		super(
 			new SlashCommandBuilder()
-				.setName('join')
 				.setDescription('Připojí bota na kanál.'),
 			'join'
 		)

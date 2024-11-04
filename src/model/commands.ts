@@ -1,18 +1,19 @@
-import discord, { Interaction, SharedSlashCommand } from "discord.js";
+import discord, { Interaction, SharedSlashCommand, SlashCommandBuilder } from "discord.js";
 import MusicSession from "../components/MusicSession";
 import debug from "debug";
+import Utils from "../utils";
 
 export type MusicBotCommand = DiscordCommand & DiscordCommandInterface;
 
 type OnRunCallback = (interaction: DiscordChatInteraction, session: MusicSession | null) => boolean | Promise<boolean>;
-type OnAutocompleteCallback = (interaction: discord.AutocompleteInteraction<discord.CacheType>, session: MusicSession | null) => void
-type OnButtonCallback = (interaction: discord.ButtonInteraction<discord.CacheType>, path: ButtonPath, session: MusicSession | null) => void
+type OnAutocompleteCallback = (interaction: discord.AutocompleteInteraction<discord.CacheType>, session: MusicSession | null) => void;
+type OnButtonCallback = (interaction: discord.ButtonInteraction<discord.CacheType>, path: ButtonPath, session: MusicSession | null) => void;
 export default abstract class DiscordCommand {
 	public valid: 						boolean;
 	protected readonly debugger: 	debug.Debugger;
 
 	constructor(
-		private command: SharedSlashCommand,
+		private command: discord.SharedSlashCommand & discord.SharedNameAndDescription,
 		public name: string
 	) { 
 		this.valid = /^\w+$/.test(name);
@@ -20,6 +21,8 @@ export default abstract class DiscordCommand {
 			console.error(`Command name '${name}' includes some illegal characters!`);
 
 		this.debugger = debug(`bp:cmd:${name}`);
+
+		command.setName(name);
 	}
 
 	public getCommand(): discord.RESTPostAPIChatInputApplicationCommandsJSONBody {
