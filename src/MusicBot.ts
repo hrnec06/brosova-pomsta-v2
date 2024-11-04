@@ -1,5 +1,5 @@
 import discord, { ActionRowBuilder, ButtonBuilder, ButtonStyle, GatewayIntentBits } from 'discord.js';
-import DiscordCommand, { DiscordCommandInterface } from './model/commands';
+import DiscordCommand, { DiscordCommandInterface, MusicBotCommand } from './model/commands';
 import InteractionManager from './components/InteractionManager';
 import SessionManager from './components/SessionManager';
 import fs from 'fs/promises';
@@ -19,6 +19,7 @@ import assert from 'node:assert';
 import BotConfig, { IBotConfig } from './components/BotConfig';
 import Log from './utils/Log';
 import QueueCommand from './commands/Queue';
+import debug from 'debug';
 
 type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'autocompleteInteraction' | 'configLoad';
 
@@ -32,6 +33,8 @@ interface MusicBotEventsMap extends Record<MusicBotEvents, any> {
 
 export default class MusicBot {
 	public readonly BOT_VERSION: 	string = 	'2.2.1';
+
+	private debugger 					= debug('bp:core');
 
 	public 	client: 					discord.Client;
 	private 	rest: 					discord.REST;
@@ -54,8 +57,7 @@ export default class MusicBot {
 		GOOGLE_API_KEY: 			string | undefined
 	) {
 		// Init bot
-		const BOT_LOAD_START = Date.now();
-		console.log("Loggin in...");
+		this.debugger('Logging in');
 
 		// Init managers
 		this.youtubeAPI = 			new YoutubeAPI(this, GOOGLE_API_KEY);
@@ -85,7 +87,7 @@ export default class MusicBot {
 		this.client.on('ready', async () => {
 			// Emit event
 			this.emit('load', this.client);
-			console.log(`\n\nBot logged-in as ${this.client.user?.username} after ${((Date.now() - BOT_LOAD_START) / 1000).toFixed(2)}s.`);
+			this.debugger('Bot logged in as %s.', this.client.user?.username ?? 'unknown');
 
 			this.registerCommands();
 			this.config.getConfigAsync((config) => {
@@ -111,8 +113,6 @@ export default class MusicBot {
 			const isBot = newState.member?.id === this.client.user?.id;
 			// Is leave event?
 			const isLeave = oldState.channel != null && newState.channel == null;
-
-			console.log(isLeave, isBot);
 
 			// On bot disconnect
 			if (isLeave && isBot)
@@ -161,7 +161,7 @@ export default class MusicBot {
 		});
 
 		client.login(this.BOT_TOKEN).catch((error) => {
-			console.error('Login failed!');
+			this.debugger('Failed to log in.');
 			process.exit();
 		})
 
@@ -271,6 +271,18 @@ export default class MusicBot {
 	}
 
 	private async registerCommands() {
+		this.debugger('Validating commands (%d)', this.commands.length);
+
+		for (const command of this.commands) {
+			const cmds = this.commands.filter(cmd => cmd.name == command.name && cmd.valid);
+			if (cmds.length > 1) {
+				cmds.forEach(cmd => {
+					this.debugger('Duplicate command with name "%s". Invalidating the comamnd.', cmd.name);
+					cmd.valid = false;
+				});
+			}
+		}
+
 		const parsedCommands = this.commands.filter(command => command.valid).map(command => command.getCommand());
 		const stringifiedCommands = JSON.stringify(parsedCommands);
 
@@ -279,7 +291,7 @@ export default class MusicBot {
 		try {
 			const prev = await fs.readFile(FILE_NAME);
 			if (stringifiedCommands === prev.toString()) {
-				console.log(`Skipping registering commands. (${parsedCommands.length})`);
+				this.debugger('Skipping registering commands. (%d)', parsedCommands.length);
 				return;
 			}
 		} catch {
@@ -288,7 +300,7 @@ export default class MusicBot {
 
 		// Register
 		try {
-			console.log("Registering commands...");
+			this.debugger('Registering commands.');
 
 			await this.rest.put(
 				discord.Routes.applicationCommands(this.CLIENT_ID),
@@ -298,7 +310,7 @@ export default class MusicBot {
 			);
 			await fs.writeFile(FILE_NAME, stringifiedCommands, 'utf-8');
 
-			console.log(`Commands Registered (${parsedCommands.length}).`);
+			this.debugger('Commands registered (%d).', parsedCommands.length);
 		} catch (err) {
 			fs.rm(FILE_NAME);
 			this.handleError(err);
@@ -318,7 +330,7 @@ export default class MusicBot {
 	}
 
 	public getCommand<C extends (DiscordCommand & DiscordCommandInterface)>(name: string): C | null {
-		const command = this.commands.find((cmd) => cmd.name === name);
+		const command = this.commands.find((cmd) => cmd.name === name && cmd.valid);
 		return command as C || null;
 	}
 
@@ -329,7 +341,6 @@ export default class MusicBot {
 	 */
 	public async handleError(error: any, interaction?: DiscordInteraction) {
 		const embed = this.interactionManager.generateErrorEmbed(error, { interaction: interaction });
-		console.log(error, interaction);
 		await this.interactionManager.respond(interaction, [embed], { devChannelFallback: true, ephermal: true });
 	}
 
