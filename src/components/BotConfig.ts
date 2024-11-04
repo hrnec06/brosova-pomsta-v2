@@ -3,6 +3,7 @@ import MusicBot from "../MusicBot";
 import discord from 'discord.js';
 import fs from 'fs';
 import moment from "moment";
+import debug from "debug";
 
 type AppEnvironment = 'production' | 'development';
 
@@ -33,24 +34,27 @@ interface IBotConfigBannedItem {
 }
 
 export default class BotConfig {
-	private readonly CONFIG_DIRECTORY: string = 'bot-config.json';
-	private readonly PRODUCTION_DIR: keyof IBotConfig = 'production';
-	private readonly DEVELOPMENT_DIR: keyof IBotConfig = 'development';
-	private readonly BOT_DIR: keyof IBotConfig = 'bot';
+	private readonly CONFIG_DIRECTORY: string 				= 'bot-config.json';
+	private readonly PRODUCTION_DIR: keyof IBotConfig 		= 'production';
+	private readonly DEVELOPMENT_DIR: keyof IBotConfig 	= 'development';
+	private readonly BOT_DIR: keyof IBotConfig 				= 'bot';
+
+	private debugger													= debug('bp:config');
 
 	public developerChannel?: discord.SendableChannels;
 	public developerGuild?: discord.Guild;
 	public developerUser?: discord.User;
 
 	private config: IBotConfig;
-	private configLoaded: boolean = false;
+	private configLoaded: boolean 								= false;
 
 	constructor(private client: MusicBot) {
 		this.config = this.getDefaultConfig();
 
 		if (!this.CONFIG_DIRECTORY.endsWith('.json')) {
-			console.warn('CONFIG_DIRECTORY must end with .json! Automatically correcting the mistake.');
+			this.debugger('CONFIG_DIRECTORY must be in JSON format! Automatically correcting the mistake.');
 			this.CONFIG_DIRECTORY = this.CONFIG_DIRECTORY + '.json';
+			this.debugger('CONFIG_DIRECTORY set to %s', this.CONFIG_DIRECTORY);
 		}
 
 		this.loadConfig()
@@ -65,23 +69,23 @@ export default class BotConfig {
 	}
 
 	private async createConfig(config?: IBotConfig) {
-		console.log('Creating a new configuration file.');
+		this.debugger('Creating a new configuration file.');
 
 		try {
 			if (fs.existsSync(this.CONFIG_DIRECTORY)) {
-				console.log('Renaming old configuration file...');
+				this.debugger('Renaming old configuration file.');
 				const newName = this.CONFIG_DIRECTORY.replace(/\.json$/, `.${moment().format('HH-mm-ss DD-MM-YYYY')}.old.json`);
 				await fs.promises.rename(this.CONFIG_DIRECTORY, newName);
 			}
 		} catch (err) {
-			console.error('Failed to rename the old configuratuion file.');
+			this.debugger('Failed to rename the old configuratiion file.');
 			throw err;
 		}
 
 		try {
 			await fs.promises.writeFile(this.CONFIG_DIRECTORY, JSON.stringify(config || this.getDefaultConfig()), { encoding: 'utf-8' });
 		} catch (err) {
-			console.error('Failed to create a new configuration file.');
+			this.debugger('Failed to create a new configuration file.');
 			throw err;
 		}
 
@@ -92,31 +96,31 @@ export default class BotConfig {
 	}
 
 	private async saveConfig(config: IBotConfig) {
-		console.log('Saving config.');
+		this.debugger('Saving configuration file.');
 
 		try {
 			if (!fs.existsSync(this.CONFIG_DIRECTORY)) {
 				await this.createConfig(config);
-				console.error("Configuration file doesn't exist! Creating a new one.");
+				this.debugger("Configuration file doesn't exist! Creating a new one.");
 				return;
 			}
 			await fs.promises.writeFile(this.CONFIG_DIRECTORY, JSON.stringify(config), {encoding: 'utf-8'});
 		} catch (err) {
-			console.error('Configuration save failed!');
+			this.debugger('Configuration save failed!');
 			throw err;
 		}
 
-		console.log('Save complete.');
+		this.debugger('Save completed.');
 	}
 
 	private async loadConfig(): Promise<IBotConfig> {
-		console.log('Loading configuration.');
+		this.debugger('Loading configuration.');
 		
 		var config: IBotConfig;
 
 		try {
 			if (fs.existsSync(this.CONFIG_DIRECTORY)) {
-				console.log('Configuration file detected.')
+				this.debugger('Configuration file detected!.');
 
 				const configRaw = await fs.promises.readFile(this.CONFIG_DIRECTORY);
 				const configJson = JSON.parse(configRaw.toString());
@@ -125,27 +129,27 @@ export default class BotConfig {
 
 				// validation
 				if (!('version' in configJson)) {
-					console.warn(`ERROR: 'version' not found in config.`);
+					this.debugger('ERROR: \'version\' not found in config..');
 					ok = false;
 				}
 				else if (!('environment' in configJson)) {
-					console.warn(`ERROR: 'environment' not found in config.`);
+					this.debugger(`ERROR: 'environment' not found in config.`);
 					ok = false;
 				}
 				else if (configJson.environment !== 'development' && configJson.environment !== 'production') {
-					console.warn(`ERROR: 'environment' must be either 'development' or 'production'`);
+					this.debugger(`ERROR: 'environment' must be either 'development' or 'production'`);
 					ok = false;
 				}
 				else if (!(this.DEVELOPMENT_DIR in configJson)) {
-					console.warn(`ERROR: '${this.DEVELOPMENT_DIR}' not found in config.`);
+					this.debugger(`ERROR: '${this.DEVELOPMENT_DIR}' not found in config.`);
 					ok = false;
 				}
 				else if (!(this.PRODUCTION_DIR in configJson)) {
-					console.warn(`ERROR: '${this.PRODUCTION_DIR}' not found in config.`);
+					this.debugger(`ERROR: '${this.PRODUCTION_DIR}' not found in config.`);
 					ok = false;
 				}
 				else if (!(this.BOT_DIR in configJson)) {
-					console.warn(`ERROR: '${this.BOT_DIR}' not found in config.`);
+					this.debugger(`ERROR: '${this.BOT_DIR}' not found in config.`);
 					ok = false;
 				}
 
@@ -153,7 +157,7 @@ export default class BotConfig {
 					config = deepmerge(this.getDefaultConfig(), configJson);
 
 					if (config.version !== this.client.BOT_VERSION) {
-						console.log(`Older configuration version detected! Saving the upgraded file.`);
+						this.debugger('Older configuration version detected (%s)! Saving the upgraded file.', config.version);
 						config.version = this.client.BOT_VERSION;
 					}
 
@@ -162,23 +166,23 @@ export default class BotConfig {
 				}
 				else {
 					await this.createConfig();
-					console.log(`New configuration file ${this.CONFIG_DIRECTORY} successfully created.`);
+					this.debugger(`New configuration file ${this.CONFIG_DIRECTORY} successfully created.`);
 					config = this.getDefaultConfig();
 				}
 			}
 			else {
-				console.warn('Configuration file not found!');
+				this.debugger(`Configuration file not found!`);
 				await this.createConfig();
-				console.log(`New configuration file ${this.CONFIG_DIRECTORY} successfully created.`);
+				this.debugger(`New configuration file ${this.CONFIG_DIRECTORY} successfully created.`);
 				config = this.getDefaultConfig();
 			}
 		} catch (err) {
-			console.error('Configuration failed to load. Using default config.');
+			this.debugger('Configuration failed to load. Using default config.');
 			console.error(err);
 			config = this.getDefaultConfig();
 		}
 
-		console.log('Configration file successfully loaded!\n');
+		this.debugger('Configration file successfully loaded!');
 
 		return config;
 	}
@@ -237,10 +241,10 @@ export default class BotConfig {
 	public loadDeveloperVariables() {
 		const developerChannel = this.client.client.channels.cache.get(this.getSystem().developerChannelID);
 		if (!developerChannel) {
-			console.warn(`Developer channel ID ${this.getSystem().developerChannelID} wasn't found.`);
+			this.debugger(`Developer channel ID ${this.getSystem().developerChannelID} wasn't found.`);
 		}
 		else if (!developerChannel.isSendable()) {
-			console.warn(`Specified developer channel is not sendable.`);
+			this.debugger(`Specified developer channel is not sendable.`);
 		}
 		else {
 			this.developerChannel = developerChannel;
@@ -248,12 +252,12 @@ export default class BotConfig {
 
 		this.developerGuild = this.client.client.guilds.cache.get(this.getSystem().developerGuildID);
 		if (!this.developerGuild) {
-			console.warn(`Developer guild ID ${this.getSystem().developerGuildID} wasn't found.`);
+			this.debugger(`Developer guild ID ${this.getSystem().developerGuildID} wasn't found.`);
 		}
 
 		this.developerUser = this.client.client.users.cache.get(this.getSystem().developerUserID);
 		if (!this.developerUser) {
-			console.warn(`Developer user ID ${this.getSystem().developerGuildID} wasn't found.`);
+			this.debugger(`Developer user ID ${this.getSystem().developerGuildID} wasn't found.`);
 		}
 	}
 }

@@ -4,6 +4,7 @@ import fs, { WriteStream } from 'fs';
 import assert from "node:assert";
 import discord from 'discord.js';
 import Utils from ".";
+import { debug } from "debug";
 
 type LogDataPrimitive = string | boolean | number;
 interface LogDataObject {
@@ -26,10 +27,13 @@ export default class Log {
 	private readonly MAX_LOG_FILES: number = 		1;
 	private readonly LOG_DIR: string = 				'logs/';
 	private readonly LOG_FILE_FORMAT: string = 	'[date].log';
-	private ready: boolean = 							false;
-	private error: boolean = 							false;
 
-	private stack: LogEntry[] = [];
+	private debugger 										= debug('bp:log');
+
+	private ready: boolean 								= false;
+	private error: boolean 								= false;
+
+	private stack: LogEntry[] 							= [];
 
 	private stream?: WriteStream;
 
@@ -39,7 +43,7 @@ export default class Log {
 		this.client.config.getConfigAsync(async (config) => {
 			const logEnabled = this.client.config.getSystem().debugLogging;
 
-			console.log('Log: ' + (logEnabled ? 'enabled' : 'disabled'));
+			this.debugger('State: %s', logEnabled ? 'enabled' : 'disabled');
 
 			if (!logEnabled) {
 				this.error = true;
@@ -79,7 +83,7 @@ export default class Log {
 			const toDelete = files.length - this.MAX_LOG_FILES;
 			if (toDelete > 0) {
 				var deleted = 0;
-				console.log(`Deleting ${toDelete} old log files!`);
+				this.debugger('Deleting %d old log files!', toDelete);
 				for (let i = this.MAX_LOG_FILES; i < files.length; i++) {
 					const file = files[i];
 					try {
@@ -87,15 +91,15 @@ export default class Log {
 						deleted++;
 					}
 					catch {
-						console.error(`Failed to delete file "${file}"`);
+						this.debugger('Failed to delete file "%s"', file);
 					}
 				}
-				console.log(`Successfully deleted ${deleted}/${toDelete} files.`);
+				this.debugger('Successfully deleted %d/%d files.', deleted, toDelete);
 			}
 
 			return true;
 		} catch (err) {
-			console.error('Failed to remove old log files.');
+			this.debugger('Failed to delete old log files.');
 			this.error = true;
 			this.client.handleError(err);
 		}
@@ -149,15 +153,11 @@ export default class Log {
 
 		builder += '\n\n';
 
-		// console.log(builder);
-
 		return this.stream.write(builder);
 	}
 
 
 	private convertData(data: LogDataAdvanced): string {
-		console.log('Convert: ',data);
-
 		try {
 			if (data == null || undefined)
 				return String(data);
