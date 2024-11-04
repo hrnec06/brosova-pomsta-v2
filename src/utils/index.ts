@@ -262,6 +262,15 @@ namespace Utils {
 		})
 	}
 
+	export function reduce<C, K>(array: C[], callback: (previous: K, current: C) => K, initialValue: K): K {
+		let result: K = initialValue;
+		for (const item of array) {
+			result = callback(result, item);
+		}
+
+		return result;
+	}
+
 	/**
 	 * ### Rozhodne správný tvar slova odkazující na počet věcí.
 	 * @param n 
