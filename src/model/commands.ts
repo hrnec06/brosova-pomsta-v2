@@ -38,7 +38,7 @@ export default abstract class DiscordCommand {
 	}
 
 	protected makePath(id: string, action?: string): string {
-		const neutralize = (s: string) => s.replace(/[^\w]/g, '');
+		const neutralize = (s: string) => s.replace(/[^\w-]/g, '');
 
 		id = neutralize(id);
 		action = action ? neutralize(action) : undefined;
