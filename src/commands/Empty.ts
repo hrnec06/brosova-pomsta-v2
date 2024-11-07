@@ -16,9 +16,10 @@ export default class EmptyCommand extends DiscordCommand implements DiscordComma
 		return false;
 	}
 
-	public onButton(interaction: ButtonInteraction<CacheType>, path: ButtonPath, session: MusicSession | null) {
+	public onButton(interaction: ButtonInteraction<CacheType>, path: ComponentPath, session: MusicSession | null) {
 	}
 
 	public onAutoComplete(interaction: AutocompleteInteraction<CacheType>, session: MusicSession | null) {
+		return [];
 	}
 }

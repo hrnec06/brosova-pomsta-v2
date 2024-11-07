@@ -298,7 +298,7 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 	/**
 	 * Handle button
 	 */
-	public async onButton(interaction: ButtonInteraction<CacheType>, path: ButtonPath, session: MusicSession | null) {
+	public async onButton(interaction: ButtonInteraction<CacheType>, path: ComponentPath, session: MusicSession | null) {
 		const interactionID = interaction.message.interactionMetadata?.id;
 
 		await interaction.deferUpdate();
@@ -469,12 +469,12 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 
 
 		const confirmButton = new ButtonBuilder()
-			.setCustomId(this.makeButtonPath('confirm', 'remove'))
+			.setCustomId(this.makePath('confirm', 'remove'))
 			.setEmoji('1301644179474223134')
 			.setStyle(ButtonStyle.Success)
 
 		const revertButton = new ButtonBuilder()
-			.setCustomId(this.makeButtonPath('revert', 'remove'))
+			.setCustomId(this.makePath('revert', 'remove'))
 			.setLabel('Vrátit')
 			.setStyle(ButtonStyle.Secondary)
 
@@ -489,19 +489,19 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 	 */
 	private generateListPagination(page: number, maxPage: number): ActionRowBuilder<ButtonBuilder> {
 		const buttonPrev = new ButtonBuilder()
-			.setCustomId(this.makeButtonPath('prev', 'list'))
+			.setCustomId(this.makePath('prev', 'list'))
 			.setDisabled(page <= 0)
 			.setEmoji('◀')
 			.setStyle(ButtonStyle.Primary)
 
 		const buttonNext = new ButtonBuilder()
-			.setCustomId(this.makeButtonPath('next', 'list'))
+			.setCustomId(this.makePath('next', 'list'))
 			.setDisabled(page >= maxPage - 1)
 			.setEmoji('▶')
 			.setStyle(ButtonStyle.Primary)
 
 		const buttonClose = new ButtonBuilder()
-			.setCustomId(this.makeButtonPath('close', 'list'))
+			.setCustomId(this.makePath('close', 'list'))
 			.setEmoji('1300533556287897700')
 			.setStyle(ButtonStyle.Danger)
 

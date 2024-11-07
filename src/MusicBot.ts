@@ -165,7 +165,10 @@ export default class MusicBot {
 			QueueCacheManager.clearOldCache();
 		}, 1000 * 60 * 60);
 
+		// Error handling
 		this.client.on('error', (error) => this.handleError(error));
+
+		// Interaction handling
 		this.client.on('interactionCreate', async (interaction) => this.handleInteraction(interaction));
 
 		// Debug
@@ -190,6 +193,7 @@ export default class MusicBot {
 		
 		return client;
 	}
+
 	private createREST(): discord.REST {
 		const rest = new discord.REST({ version: '10' }).setToken(this.BOT_TOKEN);
 
@@ -240,9 +244,9 @@ export default class MusicBot {
 		}
 		// Button
 		else if (interaction.isButton()) {
-			const buttonPath = this.parseButtonPath(interaction.customId);
+			const buttonPath = this.parsePath(interaction.customId);
 
-			if (buttonPath && (command = this.getCommand(buttonPath.commandName)) && command.onButton) {
+			if (buttonPath && (command = this.getCommand(buttonPath.commandName)) != null && command.onButton) {
 				try {
 					command.onButton(interaction, buttonPath, session);
 				} catch (err) {
@@ -268,6 +272,18 @@ export default class MusicBot {
 			}
 
 			this.emit('autocompleteInteraction', interaction);
+		}
+		// Modal
+		else if (interaction.isModalSubmit()) {
+			const modalPath = this.parsePath(interaction.customId);
+
+			if (modalPath && (command = this.getCommand(modalPath.commandName)) != null && command.onModal) {
+				try {
+					command.onModal(interaction, modalPath, session);
+				} catch (err) {
+					this.handleError(err, interaction);
+				}
+			}
 		}
 		// None above, but repliable
 		else if (interaction.isRepliable()) {
@@ -341,7 +357,7 @@ export default class MusicBot {
 		}
 	}
 
-	private parseButtonPath(path: string): ButtonPath | null {
+	private parsePath(path: string): ComponentPath | null {
 		const match = /^bp\.cmd\.(\w+)\.(\w+)(?:\[(\w+)\])?$/.exec(path);
 		if (!match) return null;
 

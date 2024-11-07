@@ -7,7 +7,9 @@ export type MusicBotCommand = DiscordCommand & DiscordCommandInterface;
 
 type OnRunCallback = (interaction: DiscordChatInteraction, session: MusicSession | null) => boolean | Promise<boolean>;
 type OnAutocompleteCallback = (interaction: discord.AutocompleteInteraction<discord.CacheType>, session: MusicSession | null) => discord.ApplicationCommandOptionChoiceData[] | Promise<discord.ApplicationCommandOptionChoiceData[]>;
-type OnButtonCallback = (interaction: discord.ButtonInteraction<discord.CacheType>, path: ButtonPath, session: MusicSession | null) => void;
+type OnButtonCallback = (interaction: discord.ButtonInteraction<discord.CacheType>, path: ComponentPath, session: MusicSession | null) => void;
+type OnModalCallback = (interaction: discord.ModalSubmitInteraction<discord.CacheType>, path: ComponentPath, session: MusicSession | null) => void;
+
 export default abstract class DiscordCommand {
 	public valid: 						boolean;
 	protected readonly debugger: 	debug.Debugger;
@@ -29,7 +31,13 @@ export default abstract class DiscordCommand {
 		return this.command.toJSON();
 	}
 
-	public makeButtonPath(id: string, action?: string): string {
+	public match(interaction: DiscordInteraction): boolean {
+		if (!('commandName' in interaction)) return false;
+
+		return this.command.name === interaction.commandName;
+	}
+
+	protected makePath(id: string, action?: string): string {
 		const neutralize = (s: string) => s.replace(/[^\w]/g, '');
 
 		id = neutralize(id);
@@ -44,15 +52,76 @@ export default abstract class DiscordCommand {
 		return `${base}.${id}`;
 	}
 
-	public match(interaction: DiscordInteraction): boolean {
-		if (!('commandName' in interaction)) return false;
-
-		return this.command.name === interaction.commandName;
+	protected pathSwitch(path: ComponentPath, pathSwitchCallback: (pathSwitch: PathSwitch) => PathSwitch) {
+		const pathSwitch = pathSwitchCallback(new PathSwitch());
+		pathSwitch.run(path);
 	}
 }
 
 export interface DiscordCommandInterface {
 	dispatch: OnRunCallback,
 	onAutoComplete?: OnAutocompleteCallback,
-	onButton?: OnButtonCallback
+	onButton?: OnButtonCallback,
+	onModal?: OnModalCallback
+}
+
+
+class PathSwitch {
+	private actionList: Record<string, PathSwitchAction> = {}
+	private idList: Record<string, () => void> = {};
+	private _default?: () => void;
+
+	public action(action: string, callback: (action: PathSwitchAction) => PathSwitchAction) {
+		this.actionList[action] = callback(new PathSwitchAction());
+		return this;
+	}
+
+	public id(id: string, callback: () => void) {
+		this.idList[id] = callback;
+		return this;
+	}
+
+	public default(callback: () => void) {
+		this._default = callback;
+		return this;
+	}
+
+	public run(path: ComponentPath) {
+		var matchingId: (() => void) | undefined;
+
+		if (path.action != undefined && this.actionList[path.action]) {
+			this.actionList[path.action].run(path);
+		}
+		else if (path.action == undefined && (matchingId = this.idList[path.id]) != undefined) {
+			matchingId();
+		}
+		else if (this._default) {
+			this._default();
+		}
+	}
+}
+
+class PathSwitchAction {
+	private idList: Record<string, () => void> = {};
+	private _default?: () => void;
+
+	public id(id: string, callback: () => void) {
+		this.idList[id] = callback;
+		return this;
+	}
+
+	public default(callback: () => void) {
+		this._default = callback;
+		return this;
+	}
+
+	public run(path: ComponentPath) {
+		const idCallback = this.idList[path.id];
+		if (idCallback != undefined) {
+			idCallback();
+		}
+		else if (this._default) {
+			this._default();
+		}
+	}
 }

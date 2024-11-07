@@ -116,7 +116,7 @@ declare interface YoutubePlaylistInfoResponse {
 	}
 }
 
-interface ButtonPath {
+interface ComponentPath {
 	commandName: string,
 	id: string,
 	path: string,
