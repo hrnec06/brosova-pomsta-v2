@@ -20,6 +20,7 @@ import BotConfig, { IBotConfig } from './components/BotConfig';
 import Log from './utils/Log';
 import QueueCommand from './commands/Queue';
 import debug from 'debug';
+import { QueueCacheManager } from './components/MusicQueue';
 
 type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'autocompleteInteraction' | 'configLoad';
 
@@ -70,6 +71,7 @@ export default class MusicBot {
 		this.client = this.createClient();
 		this.rest = this.createREST();
 
+		// Init commands
 		this.commands = [
 			new PingCommand(this),
 			new PlayCommand(this),
@@ -102,6 +104,7 @@ export default class MusicBot {
 					console.error(err);
 				}
 			});
+
 		});
 
 		// Voice update (disconnect, connect)
@@ -141,6 +144,11 @@ export default class MusicBot {
 			}
 		});
 
+		// Delete old cache files
+		QueueCacheManager.clearOldCache();
+		setInterval(() => {
+			QueueCacheManager.clearOldCache();
+		}, 1000 * 60 * 60);
 
 		this.client.on('error', (error) => this.handleError(error));
 		this.client.on('interactionCreate', async (interaction) => this.handleInteraction(interaction));
@@ -164,7 +172,7 @@ export default class MusicBot {
 			this.debugger('Failed to log in.');
 			process.exit();
 		})
-
+		
 		return client;
 	}
 	private createREST(): discord.REST {

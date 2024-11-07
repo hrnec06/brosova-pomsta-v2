@@ -1,30 +1,41 @@
-import { ActionRow, ActionRowBuilder, AutocompleteInteraction, blockQuote, bold, ButtonBuilder, ButtonComponent, ButtonInteraction, ButtonStyle, CacheType, channelLink, codeBlock, EmbedBuilder, escapeBold, escapeCodeBlock, escapeNumberedList, SlashCommandBuilder, userMention } from "discord.js";
+import { ActionRow, ActionRowBuilder, AutocompleteInteraction, blockQuote, bold, ButtonBuilder, ButtonComponent, ButtonInteraction, ButtonStyle, CacheType, channelLink, codeBlock, EmbedBuilder, escapeBold, escapeCodeBlock, escapeNumberedList, hyperlink, SlashCommandBuilder, userMention } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import MusicSession from "../components/MusicSession";
 import Utils from "../utils";
-import { v4 as uuidv4} from 'uuid';
-import { it } from "node:test";
 
 interface QueueListSession {
+	id: string,
 	lastUsedAt: number,
-	lastUser: {
-		id: string,
-		name: string
-	},
+	lastUser: UserSimple,
 	interaction: DiscordChatInteraction,
+	channelID: string,
 	page: number,
 }
 
+interface QueueRemoveSession {
+	id: string,
+	user: UserSimple,
+	interaction: DiscordChatInteraction,
+	queuePosition: number,
+	queueItem: QueuedItem,
+	musicSessionID: string,
+	createdAt: number
+}
+
 export default class QueueCommand extends DiscordCommand implements DiscordCommandInterface {
-	private readonly ITEMS_PER_PAGE: number = 10;
+	private readonly ITEMS_PER_PAGE: number = 				10;
+	private readonly SESSION_EXPIRY: number = 				1000 * 60 * 10;
+	// private readonly SESSION_EXPIRY: number = 				1000 * 10;
+	private readonly SESSION_CLEANUP_INTERVAL: number = 	1000 * 60 * 2;
+	// private readonly SESSION_CLEANUP_INTERVAL: number = 	1000 * 10;
 
 	private queueListSessions: Record<string, QueueListSession> = {};
+	private queueRemoveSessions: Record<string, QueueRemoveSession> = {};
 
 	constructor(private client: MusicBot) {
 		super(
 			new SlashCommandBuilder()
-				.setName('queue')
 				.setDescription('Funkce pro ovládání fronty.')
 				.addSubcommand(cmd => cmd
 					.setName('list')
@@ -32,6 +43,7 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 					.addIntegerOption(input => input
 						.setName('page')
 						.setDescription('Stránka.')
+						.setMinValue(0)
 					)
 				)
 				.addSubcommand(cmd => cmd
@@ -42,6 +54,7 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 						.setDescription('Pozice ve frontě.')
 						.setRequired(true)
 						.setAutocomplete(true)
+						.setMinValue(0)
 					)
 				)
 				.addSubcommand(cmd => cmd
@@ -54,9 +67,65 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 				),
 			'queue'
 		);
+
+		setInterval(async () => {
+			// Session cleanup
+			const listSessions = Utils.values(this.queueListSessions);
+			for (const session of listSessions) {
+				if (session.lastUsedAt + this.SESSION_EXPIRY < Date.now()) {
+					this.debugger(`Destory list session ${session.id}`);
+					this.destroyListSession(session);
+				}
+			}
+
+			const removeSessions = Utils.values(this.queueRemoveSessions);
+			for (const session of removeSessions) {
+				if (session.createdAt + this.SESSION_EXPIRY < Date.now()) {
+					this.debugger(`Destroy remove session ${session.id}`);
+
+					this.destroyRemoveSession(session);
+				}
+			}
+
+		}, this.SESSION_CLEANUP_INTERVAL);
 	}
 
-	public async dispatch(interaction: DiscordChatInteraction) {
+	// Session managment
+	private async destroyListSession(session: QueueListSession) {
+		await session.interaction.deleteReply();
+		delete this.queueListSessions[session.id];
+	}
+
+	private async destroyRemoveSession(queueSession: QueueRemoveSession) {
+		delete this.queueRemoveSessions[queueSession.id];
+
+		const session = this.client.getSessionManager().getSessionByID(queueSession.musicSessionID);
+		if (queueSession.queueItem.deleted) {
+			if (!session) return;
+
+			await queueSession.interaction.deleteReply();
+
+			const r = session.queue.removeQueueItem(queueSession.queueItem.id);
+			
+			if (!r) {
+				await this.client.handleError('Video ve frontě se nepovedlo smazat.', queueSession.interaction);
+				queueSession.queueItem.deleted = false;
+				return;
+			}
+		}
+		else {
+			const embed = new EmbedBuilder()
+						.setTitle(Utils.BotUtils.isVideoItem(queueSession.queueItem) ? 'Video bylo vráceno.' : 'Playlist byl vrácen.')
+						.setColor(this.client.interactionManager.DEFAULT_SUCCESS_EMBED_COLOR)
+
+			await queueSession.interaction.editReply({embeds: [embed], components: []});
+		}
+	}
+
+	/**
+	 * Handle interaction
+	 */
+	public async dispatch(interaction: DiscordChatInteraction, session: MusicSession | null) {
 		const voiceChannel = interaction.member.voice.channel;
 
 		if (!voiceChannel) {
@@ -75,7 +144,7 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 		try {
 			const session = this.client.getSessionManager().getSession(interaction);
 			if (!session) {
-				const embed = this.client.interactionManager.generateErrorEmbed("Bot není aktivní, použijte příkaz /play nebo /join!");
+				const embed = this.client.interactionManager.generateErrorEmbed("Relace není aktivní, použijte příkaz /play nebo /join!");
 				interaction.reply({ embeds: [embed], ephemeral: true });
 				return false;
 			}
@@ -84,89 +153,246 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 
 			switch (subcommand) {
 				case 'list': {
-					const [embed, actionRow] = this.generateQueueList(interaction, session);
+					const sameChannelSession = Utils.findValue(this.queueListSessions, (_id, session) => session.channelID == interaction.channelId);
+					if (sameChannelSession)
+						await this.destroyListSession(sameChannelSession);
+
+					const page = (interaction.options.getInteger('page', false) ?? 1) - 1;
+
+					const [embed, actionRow] = this.generateQueueList(interaction, session, page);
 					const response = await this.client.interactionManager.respondEmbed(interaction, [embed], {
 						components: [ actionRow ]
 					});
 
 					if (!response) {
-						this.client.handleError(new Error('Failed to create session.'));
+						interaction.deleteReply();
+						this.client.handleError(new Error('Failed to create queue session.'));
 						return false;
 					}
 
 					this.queueListSessions[response.id] = {
+						id: response.id,
+						channelID: interaction.channelId,
 						lastUsedAt: Date.now(),
 						lastUser: {
 							id: interaction.user.id,
 							name: interaction.user.displayName
 						},
-						page: 0,
+						page: page,
 						interaction: interaction
 					}
 
 					break;
 				}
+				case 'remove': {
+					const ix = interaction.options.getInteger('position', true) - 1;
+					if (ix < 0) {
+						const embed = this.client.interactionManager.generateErrorEmbed("Pozice nemůže být menší než 1!");
+						await interaction.reply({ embeds: [embed], ephemeral: true });
+						return false;
+					}
+
+					const queue = this.getQueue(session);
+					if (ix > queue.length - 1) {
+						const embed = this.client.interactionManager.generateErrorEmbed(`Vybraná pozice přesahuje délku fronty! (${queue.length})`);
+						await interaction.reply({ embeds: [embed], ephemeral: true });
+						return false;
+					}
+
+					const itemToRemove = queue[ix];
+					if ((await session.queue.getActiveVideo())?.id == itemToRemove?.id) {
+						const embed = this.client.interactionManager.generateErrorEmbed(`Video se právě přehrává, nelze smazat.`);
+						await interaction.reply({ embeds: [embed], ephemeral: true });
+						return false;
+					}
+					
+					const [embed, actionRow] = this.generateRemoveEmbed(itemToRemove, ix);
+					const response = await this.client.interactionManager.respondEmbed(interaction, [embed], {ephermal: true, components: [actionRow]});
+
+					if (!response) {
+						interaction.deleteReply();
+						this.client.handleError(new Error('Failed to create "remove" session.'));
+						return false;
+					}
+
+					itemToRemove.deleted = true;
+
+					this.queueRemoveSessions[response.id] = {
+						id: response.id,
+						createdAt: Date.now(),
+						interaction: interaction,
+						queueItem: itemToRemove,
+						queuePosition: ix,
+						user: {
+							id: interaction.user.id,
+							name: interaction.user.displayName
+						},
+						musicSessionID: session.id
+					}
+					break;
+				}
+				case 'clear': {
+					const queueLenth = session.queue.getQueueAsArray().length;
+					if (!queueLenth) {
+						await this.client.interactionManager.respondEmbed(interaction, 'Ve frontě nejsou žádná videa!', undefined, 'error', {ephermal: true});
+						return false;
+					}
+					session.queue.clearQueue();
+					await this.client.interactionManager.respondEmbed(interaction, 'Fronta byla vyčištěna!', `Bylo odstraněno ${queueLenth} položek.`, 'success');
+
+					break;
+				}
+				case 'restore': {
+					const result = session.queue.restore();
+					if (result) {
+						await this.client.interactionManager.respondEmbed(interaction, 'Fronta byla obnovena.', `Bylo obnoveno ${session.queue.getQueueAsArray().length} položek.`, 'success');
+					}
+					else {
+						await this.client.interactionManager.respondEmbed(interaction, 'Fronta nelze obnovit.', undefined, 'error');
+					}
+
+					break;
+				}
 				default: {
-					this.client.handleError(new Error('Unknown subcommand: ' + subcommand));
+					await this.client.handleError(new Error('Unknown subcommand: ' + subcommand), interaction);
 					return false;
 				}
 			}
 		}
 		catch (err) {
-			this.client.handleError(err, interaction);
+			await this.client.handleError(err, interaction);
 			return false;
 		}
 
 		return true;
 	}
 
+	/**
+	 * Handle Autocomplete
+	 */
 	public onAutoComplete(interaction: AutocompleteInteraction<CacheType>, session: MusicSession | null) {
-		interaction.respond([{name: 'test', value: 1}]);
+		if (!session) {
+			interaction.respond([]);
+			return;
+		}
+		const search = interaction.options.getFocused().toLowerCase().trim();
+
+		const subCmd = interaction.options.getSubcommand(true);
+		switch (subCmd) {
+			case 'remove': {
+				const queue = this.getQueue(session);
+				const response = queue.slice(0, 25)
+				.map((item, ix) => ({
+					name: Utils.BotUtils.isVideoItem(item) ? item.videoDetails.title : item.playlistDetails.title,
+					value: ix + 1
+				}))
+				.filter(item => item.name.toLowerCase().trim().includes(search));
+
+				interaction.respond(response);
+				break;
+			}
+			default: {
+				interaction.respond([]);
+			}
+		}
 	}
 
-	public onButton(interaction: ButtonInteraction<CacheType>, id: string, session: MusicSession | null) {
+	/**
+	 * Handle button
+	 */
+	public async onButton(interaction: ButtonInteraction<CacheType>, path: ButtonPath, session: MusicSession | null) {
 		const interactionID = interaction.message.interactionMetadata?.id;
 
-		if (!session)
-			throw 'Session is required.';
+		await interaction.deferUpdate();
 
-		var queueSession: QueueListSession;
-		if (!interactionID || !(queueSession = this.queueListSessions[interactionID])) {
-			interaction.message.deletable && interaction.message.delete();
-			this.client.handleError('Neplatná interakce.', interaction);
-			return;
-		}
+		if (path.action == 'list') {
+			var queueSession: QueueListSession;
+			if (!interactionID || !(queueSession = this.queueListSessions[interactionID])) {
+				interaction.message.deletable && interaction.message.delete();
+				this.client.handleError('Neplatná interakce.', interaction);
+				return;
+			}
 
-		const queue = this.transformQueue(session.getQueue().queue, session.getQueue().position);
-		
-		if (id == 'prev') {
-			queueSession.page = Math.max(queueSession.page - 1, 0);
+			if (!session) {
+				this.client.handleError('Není aktivní žádná relace.', interaction);
+				return;
+			}
+
+			const queue = this.getQueue(session);
+
+			switch (path.id) {
+				case 'prev': {
+					queueSession.page = Math.max(queueSession.page - 1, 0);
+					break;
+				}
+				case 'next': {
+					queueSession.page = Math.min(Math.ceil(queue.length / this.ITEMS_PER_PAGE) - 1, queueSession.page + 1);
+					break;
+				}
+				case 'close': {
+					await this.destroyListSession(queueSession);
+					return;
+				}
+				default: {
+					this.client.handleError(`Invalid button id '${path.id}'`);
+					return;
+				}
+			}
+
+			queueSession.lastUsedAt = Date.now();
+			queueSession.lastUser = {
+				id: interaction.user.id,
+				name: interaction.user.displayName
+			};
+
+			const [embed, actionRow] = this.generateQueueList(interaction, session, queueSession.page);
+			queueSession.interaction.editReply({embeds: [embed], components: [actionRow]});
 		}
-		else if (id == 'next') {
-			queueSession.page = Math.min(Math.ceil(queue.length / this.ITEMS_PER_PAGE), queueSession.page + 1);
+		else if (path.action == 'remove') {
+			var removeSession: QueueRemoveSession;
+			if (!interactionID || !(removeSession = this.queueRemoveSessions[interactionID])) {
+				interaction.message.deletable && interaction.message.delete();
+				this.client.handleError('Neplatná interakce.', interaction);
+				return;
+			}
+
+			switch (path.id) {
+				case 'confirm': {
+					await this.destroyRemoveSession(removeSession);
+					break;
+				}
+				case 'revert': {
+					removeSession.queueItem.deleted = false;
+					await this.destroyRemoveSession(removeSession);
+					break;
+				}
+				default: {
+					this.client.handleError(`Invalid button id '${path.id}'`);
+					return;
+				}
+			}
 		}
 		else {
-			interaction.deferUpdate();
-			this.client.handleError(`Invalid button id '${id}'`);
+			interaction.message?.deletable && interaction.message.delete();
+			this.client.handleError(`Neplatná interakce. (${path.action ?? 'Akce nedefinována.'})`, interaction);
 			return;
 		}
-
-		interaction.deferUpdate();
-		const [embed, actionRow] = this.generateQueueList(interaction, session, queueSession);
-		queueSession.interaction.editReply({embeds: [embed], components: [actionRow]});
 	}
 
-	private transformQueue(queue: QueuedItem[], position: number): QueuedItem[] {
-		return queue.filter((_v, i) => i >= position);
+	/**
+	 * Prepare queue for list
+	 */
+	private getQueue(session: MusicSession, position?: number): QueuedItem[] {
+		return session.queue.getQueueAsArray().filter((_v, i) => i >= (position != undefined ? position : session.queue.position));
 	}
 
-	private generateQueueList(interaction: DiscordInteraction, session: MusicSession, queueSession?: QueueListSession): [EmbedBuilder, ActionRowBuilder<ButtonBuilder>] {
-		const page = queueSession ? queueSession.page : 0;
-		console.log(page);
-
-		const queuePosition = session.getQueue().position;
-		const filteredQueue = this.transformQueue(session.getQueue().queue, queuePosition);
+	/**
+	 * Generate queue list embed
+	 */
+	private generateQueueList(interaction: DiscordInteraction, session: MusicSession, page: number): [EmbedBuilder, ActionRowBuilder<ButtonBuilder>] {
+		const filteredQueue = this.getQueue(session);
 		const maxPage = Math.ceil(filteredQueue.length / this.ITEMS_PER_PAGE);
+		page = Math.min(Math.max(page, 0), maxPage);
 
 		const vc = session.getVoiceChannel();
 
@@ -174,7 +400,7 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 			.setTitle(`Fronta pro ${vc ? channelLink(vc.id) : session.guild.name}`)
 			.setColor(this.client.interactionManager.DEFAULT_SUCCESS_EMBED_COLOR)
 			.setFooter({
-				text: `Strana ${page + 1}/${Math.max(Math.ceil(filteredQueue.length / this.ITEMS_PER_PAGE), 1)}`
+				text: `Strana ${page + 1}/${maxPage}`
 			});
 
 		if (!filteredQueue.length) {
@@ -201,8 +427,9 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 					description += 'Invalid item.\n'
 					continue;
 				}
-				description += `${i}. `;
-				description += '`' + col2[i].padStart(col2Width, ' ') + '` ';
+
+				description += `${i + 1}. `;
+				description += '`' + col2[i % this.ITEMS_PER_PAGE].padStart(col2Width, ' ') + '` ';
 				description += bold(Utils.BotUtils.isVideoItem(item) ? item.videoDetails.title : item.playlistDetails.title);
 				description += ` - ${userMention(item.user.id)}`
 				description += '\n';
@@ -210,26 +437,73 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 			embed.setDescription(description);
 		}
 
-		const actionRow = this.generatePagination(page, maxPage);
+		const actionRow = this.generateListPagination(page, maxPage);
 
 		return [embed, actionRow];
 	}
 
-	private generatePagination(page: number, maxPage: number): ActionRowBuilder<ButtonBuilder> {
+	/**
+	 * Generate remove embed
+	 */
+	private generateRemoveEmbed(item: QueuedItem, position: number): [EmbedBuilder, ActionRowBuilder<ButtonBuilder>] {
+		const title = Utils.BotUtils.getTitle(item);
+
+		const embed = new EmbedBuilder()
+			.setTitle(Utils.BotUtils.isVideoItem(item) ? `Video "${title}" bylo odstraněno z fronty.` : `Playlist "${title}" byl odstraněn z fronty.`)
+			.setURL(Utils.BotUtils.getLink(item))
+			.setThumbnail(Utils.BotUtils.getThumbnail(item))
+			.addFields([
+				{ name: 'Pozice', value: (position + 1).toString(), inline: true },
+			])
+			.setColor(this.client.interactionManager.DEFAULT_SUCCESS_EMBED_COLOR)
+			.setFooter({
+				text: item.user.name,
+				iconURL: item.user.avatarURL
+			})
+			.setTimestamp(item.addedAt);
+
+		if (Utils.BotUtils.isVideoItem(item)) {
+			embed.addFields({name: 'Délka videa', value: Utils.formatTime2(item.videoDetails.length * 1000), inline: true});
+		}
+		else {
+			embed.addFields({name: 'Délka playlistu', value: item.videoList.length.toString(), inline: true});
+		}
+
+
+		const confirmButton = new ButtonBuilder()
+			.setCustomId(this.makeButtonPath('confirm', 'remove'))
+			.setEmoji('1301644179474223134')
+			.setStyle(ButtonStyle.Success)
+
+		const revertButton = new ButtonBuilder()
+			.setCustomId(this.makeButtonPath('revert', 'remove'))
+			.setLabel('Vrátit')
+			.setStyle(ButtonStyle.Secondary)
+
+		const actionRow = new ActionRowBuilder<ButtonBuilder>()
+			.addComponents(confirmButton, revertButton);
+
+		return [embed, actionRow];
+	}
+
+	/**
+	 * Generate action row for list
+	 */
+	private generateListPagination(page: number, maxPage: number): ActionRowBuilder<ButtonBuilder> {
 		const buttonPrev = new ButtonBuilder()
-			.setCustomId(this.makeButtonPath('prev'))
+			.setCustomId(this.makeButtonPath('prev', 'list'))
 			.setDisabled(page <= 0)
 			.setEmoji('◀')
 			.setStyle(ButtonStyle.Primary)
 
 		const buttonNext = new ButtonBuilder()
-			.setCustomId(this.makeButtonPath('next'))
-			.setDisabled(page >= maxPage)
+			.setCustomId(this.makeButtonPath('next', 'list'))
+			.setDisabled(page >= maxPage - 1)
 			.setEmoji('▶')
 			.setStyle(ButtonStyle.Primary)
 
 		const buttonClose = new ButtonBuilder()
-			.setCustomId(this.makeButtonPath('close'))
+			.setCustomId(this.makeButtonPath('close', 'list'))
 			.setEmoji('1300533556287897700')
 			.setStyle(ButtonStyle.Danger)
 
