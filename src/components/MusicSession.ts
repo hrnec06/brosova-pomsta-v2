@@ -22,6 +22,7 @@ export default class MusicSession {
 	private 	joined: 						boolean 				= false;
 	private 	terminationCountdown?: 	NodeJS.Timeout;
 	private 	looping: 					boolean 				= false;
+	private	paused:						boolean				= false;
 
 	constructor(
 		private client: 				MusicBot,
@@ -152,5 +153,23 @@ export default class MusicSession {
 	}
 	public getVoiceChannel() {
 		return this.channel;
+	}
+	public setPause(state: boolean) {
+		const player = this.getPlayer();
+		if (!player) return false;
+
+		if (state) {
+			player.pause();
+		}
+		else {
+			player.unpause();
+		}
+
+		this.paused = state;
+
+		return true;
+	}
+	public isPaused() {
+		return this.paused;
 	}
 }
