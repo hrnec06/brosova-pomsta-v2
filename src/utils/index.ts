@@ -478,6 +478,16 @@ namespace Utils {
 		export function isVideoItem(item: QueuedItem): item is QueuedVideo {
 			return item && 'videoDetails' in item;
 		}
+
+		export function buildYoutubeLink(type: 'video' | 'playlist', id: string): string {
+			const base = `https://youtube.com/`;
+			if (type == 'video') {
+				return `${base}watch?v=${id}`;
+			}
+			else {
+				return `${base}playlist?list=${id}`;
+			}
+		}
 	}
 }
 
