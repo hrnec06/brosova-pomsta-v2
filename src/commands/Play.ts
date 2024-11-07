@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, CacheType, EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import discord, { AutocompleteInteraction, CacheType, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import Utils from "../utils";
@@ -40,8 +40,27 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 		return await this.play(interaction, query, playNow);
 	}
 
-	public onAutoComplete(interaction: AutocompleteInteraction<CacheType>, session: MusicSession | null) {
-		console.log(interaction);
+	public async onAutoComplete(interaction: AutocompleteInteraction<CacheType>, session: MusicSession | null): Promise<discord.ApplicationCommandOptionChoiceData[]>  {
+		const query = interaction.options.getFocused().trim();
+		const isURL = this.client.youtubeAPI.isPlaylist(query) || ytdl.validateURL(query);
+		if (isURL || query == '')
+			return [];
+
+		try {
+			const results = await this.client.youtubeAPI.fetchVideoByName(query, 5);
+			if (!results)
+				return [];
+
+			return results.map(result => ({
+				name: result.snippet.title,
+				value: Utils.BotUtils.buildYoutubeLink('video', result.id.videoId)
+			}));
+		}
+		catch (err) {
+			console.error(err);
+			this.debugger('An error has occured while processing autocomplete.');
+		}
+		return [];
 	}
 
 	public async play(interaction: DiscordChatInteraction, query: string, playNow: boolean): Promise<boolean> {
