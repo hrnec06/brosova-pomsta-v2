@@ -47,6 +47,7 @@ export default class BotConfig {
 
 	private config: IBotConfig;
 	private configLoaded: boolean 								= false;
+	private oldVersion?: string;
 
 	constructor(private client: MusicBot) {
 		this.config = this.getDefaultConfig();
@@ -156,6 +157,8 @@ export default class BotConfig {
 				if (ok) {
 					config = deepmerge(this.getDefaultConfig(), configJson);
 
+					this.oldVersion = config.version;
+
 					if (config.version !== this.client.BOT_VERSION) {
 						this.debugger('Older configuration version detected (%s)! Saving the upgraded file.', config.version);
 						config.version = this.client.BOT_VERSION;
@@ -185,6 +188,10 @@ export default class BotConfig {
 		this.debugger('Configration file successfully loaded!');
 
 		return config;
+	}
+
+	public isNewVersion() {
+		return this.oldVersion !== this.client.BOT_VERSION;
 	}
 
 	private getDefaultConfig(): IBotConfig {
@@ -238,8 +245,8 @@ export default class BotConfig {
 		this.getConfigAsync((config) => callback(config[config.environment]));
 	}
 
-	public loadDeveloperVariables() {
-		const developerChannel = this.client.client.channels.cache.get(this.getSystem().developerChannelID);
+	public async loadDeveloperVariables() {
+		const developerChannel = await this.client.client.channels.fetch(this.getSystem().developerChannelID);
 		if (!developerChannel) {
 			this.debugger(`Developer channel ID ${this.getSystem().developerChannelID} wasn't found.`);
 		}
@@ -250,12 +257,12 @@ export default class BotConfig {
 			this.developerChannel = developerChannel;
 		}
 
-		this.developerGuild = this.client.client.guilds.cache.get(this.getSystem().developerGuildID);
+		this.developerGuild = await this.client.client.guilds.fetch(this.getSystem().developerGuildID);
 		if (!this.developerGuild) {
 			this.debugger(`Developer guild ID ${this.getSystem().developerGuildID} wasn't found.`);
 		}
 
-		this.developerUser = this.client.client.users.cache.get(this.getSystem().developerUserID);
+		this.developerUser = await this.client.client.users.fetch(this.getSystem().developerUserID);
 		if (!this.developerUser) {
 			this.debugger(`Developer user ID ${this.getSystem().developerGuildID} wasn't found.`);
 		}

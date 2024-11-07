@@ -28,17 +28,16 @@ export default class YoutubeAPI {
 		return response;
   }
 
-	public async fetchVideoByName(name: string) {
+	public async fetchVideoByName(name: string, limit: number) {
 		if (!this.GOOGLE_API_KEY) return null;
 
-		const URL = `https://www.googleapis.com/youtube/v3/search?part=snippet&fields=items&type=video&maxResults=${1}&q=${encodeURIComponent(name)}&key=${this.GOOGLE_API_KEY}`;
+		const URL = `https://www.googleapis.com/youtube/v3/search?part=snippet&fields=items&type=video&maxResults=${limit}&q=${encodeURIComponent(name)}&key=${this.GOOGLE_API_KEY}`;
 		const response = await fetch(URL);
 		const result = (await response.json() as YoutubeAPIResponse<YoutubeVideoSearchItem>);
 
 		if (!result || !result.items) throw new Error('Youtube API returned an invalid response.');
-		if (!result.items.length) return null;
 
-		return result.items[0];
+		return result.items
 	}
 
 	public getPlaylistIdFromURL(url: string) {
@@ -81,10 +80,10 @@ export default class YoutubeAPI {
 		}
 		// Search by name
 		else {
-			 const videoData = await this.fetchVideoByName(query);
-			 if (videoData)
-				  return videoData.id.videoId;
-			 return null;
+			 const videoData = await this.fetchVideoByName(query, 1);
+			 if (!videoData?.length) return null;
+
+			 return videoData[0].id.videoId;
 		}
   	}
 }
