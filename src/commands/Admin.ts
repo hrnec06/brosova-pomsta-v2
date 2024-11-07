@@ -297,9 +297,9 @@ export default class AdminCommand extends DiscordCommand implements DiscordComma
 
 	public onAutoComplete(interaction: AutocompleteInteraction<CacheType>) {
 		const sessions = this.client.getSessionManager().getSessionsAsArray();
-		interaction.respond(sessions.map(session => ({
+		return sessions.map(session => ({
 			name: session.guild.name,
 			value: session.id
-		})));
+		}));
 	}
 }

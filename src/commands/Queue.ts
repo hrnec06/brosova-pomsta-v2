@@ -272,8 +272,7 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 	 */
 	public onAutoComplete(interaction: AutocompleteInteraction<CacheType>, session: MusicSession | null) {
 		if (!session) {
-			interaction.respond([]);
-			return;
+			return [];
 		}
 		const search = interaction.options.getFocused().toLowerCase().trim();
 
@@ -288,11 +287,10 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 				}))
 				.filter(item => item.name.toLowerCase().trim().includes(search));
 
-				interaction.respond(response);
-				break;
+				return response;
 			}
 			default: {
-				interaction.respond([]);
+				return [];
 			}
 		}
 	}

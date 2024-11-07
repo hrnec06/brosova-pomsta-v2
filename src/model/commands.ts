@@ -6,7 +6,7 @@ import Utils from "../utils";
 export type MusicBotCommand = DiscordCommand & DiscordCommandInterface;
 
 type OnRunCallback = (interaction: DiscordChatInteraction, session: MusicSession | null) => boolean | Promise<boolean>;
-type OnAutocompleteCallback = (interaction: discord.AutocompleteInteraction<discord.CacheType>, session: MusicSession | null) => void;
+type OnAutocompleteCallback = (interaction: discord.AutocompleteInteraction<discord.CacheType>, session: MusicSession | null) => discord.ApplicationCommandOptionChoiceData[] | Promise<discord.ApplicationCommandOptionChoiceData[]>;
 type OnButtonCallback = (interaction: discord.ButtonInteraction<discord.CacheType>, path: ButtonPath, session: MusicSession | null) => void;
 export default abstract class DiscordCommand {
 	public valid: 						boolean;

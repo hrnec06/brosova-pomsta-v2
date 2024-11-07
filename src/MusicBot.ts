@@ -245,7 +245,8 @@ export default class MusicBot {
 		else if (interaction.isAutocomplete()) {
 			if (command && command.onAutoComplete) {
 				try {
-					command.onAutoComplete(interaction, session);
+					const response = await command.onAutoComplete(interaction, session);
+					interaction.respond(response);
 				} catch (err) {
 					this.handleError(err, interaction);
 				}
