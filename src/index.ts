@@ -14,11 +14,15 @@ if (!GOOGLE_API_KEY) console.warn("GOOGLE_API_KEY is not defined in .env!");
 
 export const CONFIG_DIRECTORY = "config.json";
 
+const ENVIRONMENT = process.env.ENVIRONMENT;
+if (!ENVIRONMENT) throw 'ENVIRONMENT wasn\'t specified in .env';
+if (ENVIRONMENT != 'production' && ENVIRONMENT != 'development') throw `ENVIRONMENT must be 'production' or 'development'. Got ${ENVIRONMENT}.`;
 
 const client = new MusicBot(
 	BOT_TOKEN,
 	CLIENT_ID,
-	GOOGLE_API_KEY
+	GOOGLE_API_KEY,
+	ENVIRONMENT
 );
 
 process.on('unhandledRejection', (error) => {

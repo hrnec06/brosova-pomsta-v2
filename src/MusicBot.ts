@@ -21,6 +21,9 @@ import Log from './utils/Log';
 import QueueCommand from './commands/Queue';
 import debug from 'debug';
 import { QueueCacheManager } from './components/MusicQueue';
+import PauseCommand from './commands/Pause';
+
+type BotEnvironment = 'production' | 'development';
 
 type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'autocompleteInteraction' | 'configLoad';
 
@@ -33,13 +36,16 @@ interface MusicBotEventsMap extends Record<MusicBotEvents, any> {
 }
 
 export default class MusicBot {
-	public readonly BOT_VERSION: 	string = 	'2.2.1';
+	public 	readonly BOT_VERSION: 	string = 	'2.2.1';
+	public 	readonly ENVIRONMENT: BotEnvironment;
 
-	private debugger 					= debug('bp:core');
+	private 	debugger 					= debug('bp:core');
 
 	public 	client: 					discord.Client;
 	private 	rest: 					discord.REST;
 	private 	commands: 				(DiscordCommand & DiscordCommandInterface)[];
+	private	BOT_TOKEN:				string;
+	private	CLIENT_ID:				string;
 
 	public 	readonly config: 		BotConfig;
 	public 	interactionManager: 	InteractionManager;
@@ -53,12 +59,19 @@ export default class MusicBot {
 
 
 	constructor(
-		private BOT_TOKEN: 		string,
-		private CLIENT_ID:	 	string,
-		GOOGLE_API_KEY: 			string | undefined
+		BOT_TOKEN:			string,
+		CLIENT_ID:	 		string,
+		GOOGLE_API_KEY: 	string | undefined,
+		ENVIRONMENT:		BotEnvironment
 	) {
 		// Init bot
+		this.debugger(`Bot loaded in ${ENVIRONMENT} mode.`);
 		this.debugger('Logging in');
+
+		this.ENVIRONMENT = ENVIRONMENT;
+
+		this.BOT_TOKEN = BOT_TOKEN;
+		this.CLIENT_ID = CLIENT_ID;
 
 		// Init managers
 		this.youtubeAPI = 			new YoutubeAPI(this, GOOGLE_API_KEY);
@@ -81,7 +94,9 @@ export default class MusicBot {
 			new StopComamnd(this),
 			new LoopCommand(this),
 			new AdminCommand(this),
-			new QueueCommand(this)
+			new QueueCommand(this),
+			new PauseCommand(this, 'pause', 'Zastaví přehrávání', true),
+			new PauseCommand(this, 'unpause', 'Odzastaví přehrávání', false)
 			// new ConfigCommand(this)
 		];
 
@@ -98,7 +113,7 @@ export default class MusicBot {
 					this.config.loadDeveloperVariables()
 					
 					// Activity
-					this.client.user?.setActivity(config.environment == 'production' ? 'yOuR pHOnE liNgiNg' : 'Bot running in development mode.', { type: discord.ActivityType.Custom });
+					this.client.user?.setActivity(this.ENVIRONMENT == 'production' ? 'yOuR pHOnE liNgiNg' : 'Bot running in development mode.', { type: discord.ActivityType.Custom });
 				} catch (err) {
 					console.error('An error occured while loading the bot.');
 					console.error(err);

@@ -9,7 +9,6 @@ type AppEnvironment = 'production' | 'development';
 
 export interface IBotConfig {
 	version: string,
-	environment: AppEnvironment,
 	production: IBotConfigSystem,
 	development: IBotConfigSystem,
 	bot: {
@@ -137,10 +136,6 @@ export default class BotConfig {
 					this.debugger(`ERROR: 'environment' not found in config.`);
 					ok = false;
 				}
-				else if (configJson.environment !== 'development' && configJson.environment !== 'production') {
-					this.debugger(`ERROR: 'environment' must be either 'development' or 'production'`);
-					ok = false;
-				}
 				else if (!(this.DEVELOPMENT_DIR in configJson)) {
 					this.debugger(`ERROR: '${this.DEVELOPMENT_DIR}' not found in config.`);
 					ok = false;
@@ -201,7 +196,6 @@ export default class BotConfig {
 				bannedItems: [],
 				volumeShift: 0
 			},
-			environment: 'development',
 			production: {
 				developerChannelID: '1292190183646564363',
 				developerUserID: '470952100726308864',
@@ -232,17 +226,11 @@ export default class BotConfig {
 		return this.config;
 	}
 
-	public getEnvironment(): AppEnvironment {
-		return this.getConfig().environment;
-	}
-	public getEnvironmentAsync(callback: (config: AppEnvironment) => void) {
-		this.getConfigAsync((config) => callback(config.environment));
-	}
 	public getSystem(): IBotConfigSystem {
-		return this.config[this.config.environment];
+		return this.config[this.client.ENVIRONMENT];
 	}
 	public getSystemAsync(callback: (config: IBotConfigSystem) => void) {
-		this.getConfigAsync((config) => callback(config[config.environment]));
+		this.getConfigAsync((config) => callback(config[this.client.ENVIRONMENT]));
 	}
 
 	public async loadDeveloperVariables() {
