@@ -90,7 +90,9 @@ class PathSwitch {
 		var matchingId: (() => void) | undefined;
 
 		if (path.action != undefined && this.actionList[path.action]) {
-			this.actionList[path.action].run(path);
+			const handled = this.actionList[path.action].run(path);
+			if (!handled && this._default)
+				this._default();
 		}
 		else if (path.action == undefined && (matchingId = this.idList[path.id]) != undefined) {
 			matchingId();
@@ -115,13 +117,16 @@ class PathSwitchAction {
 		return this;
 	}
 
-	public run(path: ComponentPath) {
+	public run(path: ComponentPath): boolean {
 		const idCallback = this.idList[path.id];
 		if (idCallback != undefined) {
 			idCallback();
+			return true;
 		}
 		else if (this._default) {
 			this._default();
+			return true;
 		}
+		return false;
 	}
 }
