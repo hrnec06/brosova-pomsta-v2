@@ -24,6 +24,7 @@ import { QueueCacheManager } from './components/MusicQueue';
 import PauseCommand from './commands/Pause';
 import SubscribeCommand from './commands/Subscribe';
 import UnsubscribeCommand from './commands/Unsubscribe';
+import InfoCommand from './commands/Info';
 
 type BotEnvironment = 'production' | 'development';
 
@@ -100,7 +101,8 @@ export default class MusicBot {
 			new PauseCommand(this, 'pause', 'Zastaví přehrávání', true),
 			new PauseCommand(this, 'unpause', 'Odzastaví přehrávání', false),
 			new SubscribeCommand(this),
-			new UnsubscribeCommand(this)
+			new UnsubscribeCommand(this),
+			new InfoCommand(this)
 			// new ConfigCommand(this)
 		];
 
