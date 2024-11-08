@@ -104,13 +104,20 @@ class PathSwitch {
 }
 
 class PathSwitchAction<T, U extends boolean> {
-	private _use?: ((id: string) => Promise<T> | T);
-	private idList: Record<string, (context: U extends true ? T : undefined) => Promise<void> | void> = {};
-	private _default?: ((context: U extends true ? T : undefined) => Promise<void> | void);
+	private idList: Record<string, (context: U extends true ? T : undefined) => Promisable<void>> = {};
+	private _default?: ((context: U extends true ? T : undefined) => Promisable<void>);
+
+	private _use?: (id: string) => Promisable<T>;
+	private _check?: (id: string, context: U extends true ? T : undefined) => Promisable<boolean>;
 
 	public use(callback: ((id: string) => Promise<T> | T)): PathSwitchAction<T, true> {
 		this._use = callback;
 		return this as PathSwitchAction<T, true>;
+	}
+
+	public check(callback: (id: string, context: U extends true ? T : undefined) => Promisable<boolean>) {
+		this._check = callback;
+		return this as PathSwitchAction<T, U>;
 	}
 
 	public id(id: string, callback: ((context: U extends true ? T : undefined) => Promise<void> | void)): PathSwitchAction<T, U> {
@@ -126,6 +133,10 @@ class PathSwitchAction<T, U extends boolean> {
 	public async run(path: ComponentPath): Promise<boolean> {
 		const idCallback = this.idList[path.id];
 		const ctx = this._use ? (await this._use(path.id)) : undefined;
+		const check = this._check ? (await this._check(path.id, ctx as U extends true ? T : undefined)) : true;
+
+		if (!check)
+			return false;
 
 		if (idCallback != undefined) {
 			await idCallback(ctx as U extends true ? T : undefined);
