@@ -107,7 +107,7 @@ export default class MusicBot {
 			this.debugger('Bot logged in as %s.', this.client.user?.username ?? 'unknown');
 
 			this.registerCommands();
-			this.config.getConfigAsync((config) => {
+			this.config.getDataAsync((config) => {
 				try {
 					// Setting developer channels and user.
 					this.config.loadDeveloperVariables()

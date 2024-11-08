@@ -40,7 +40,7 @@ export default class Log {
 	constructor(private client: MusicBot) {
 		this.MAX_LOG_FILES = Math.max(this.MAX_LOG_FILES - 1, 0);
 
-		this.client.config.getConfigAsync(async (config) => {
+		this.client.config.getDataAsync(async (config) => {
 			const logEnabled = this.client.config.getSystem().debugLogging;
 
 			this.debugger('State: %s', logEnabled ? 'enabled' : 'disabled');

@@ -1,5 +1,5 @@
 last-commands.json
-bot-config.json
+config.json
 src/utils/archive.ts
 
 .env
@@ -11,3 +11,4 @@ dist/
 logs/
 cache/
 data/
+old/
