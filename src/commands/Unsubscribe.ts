@@ -1,7 +1,6 @@
-import { AutocompleteInteraction, ButtonInteraction, CacheType, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
-import MusicSession from "../components/MusicSession";
 import AdminCommand from "./Admin";
 
 export default class UnsubscribeCommand extends DiscordCommand implements DiscordCommandInterface {

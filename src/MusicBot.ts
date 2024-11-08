@@ -1,13 +1,10 @@
-import discord, { ActionRowBuilder, ButtonBuilder, ButtonStyle, GatewayIntentBits } from 'discord.js';
+import discord, { GatewayIntentBits } from 'discord.js';
 import DiscordCommand, { DiscordCommandInterface, MusicBotCommand } from './model/commands';
 import InteractionManager from './components/InteractionManager';
 import SessionManager from './components/SessionManager';
 import fs from 'fs/promises';
 import PingCommand from './commands/Ping';
 import PlayCommand from './commands/Play';
-import ConfigCommand from './commands/Config';
-import deepmerge from 'deepmerge';
-import Utils from './utils';
 import YourPhoneLingingCommand from './commands/YourPhoneLinging';
 import SkipCommand from './commands/Skip';
 import JoinCommand from './commands/Join';

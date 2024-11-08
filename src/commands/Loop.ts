@@ -2,7 +2,6 @@ import { SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import Utils from "../utils";
-import MusicSession from "../components/MusicSession";
 
 export default class LoopCommand extends DiscordCommand implements DiscordCommandInterface {
 	private looping: boolean = false;

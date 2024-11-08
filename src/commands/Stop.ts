@@ -1,4 +1,4 @@
-import discord, { SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import Utils from "../utils";

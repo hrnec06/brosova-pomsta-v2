@@ -3,7 +3,6 @@ import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import Utils from "../utils";
 import ytdl from '@distube/ytdl-core';
-import { GOOGLE_API_KEY } from "..";
 import { v4 as uuidv4 } from 'uuid';
 import MusicSession from "../components/MusicSession";
 

@@ -1,8 +1,7 @@
 import ytdl from "@distube/ytdl-core";
 import MusicBot from "../MusicBot";
 import MusicSession from "./MusicSession";
-import { AudioPlayerStatus, createAudioResource, demuxProbe } from "@discordjs/voice";
-import LoopCommand from "../commands/Loop";
+import {createAudioResource, demuxProbe } from "@discordjs/voice";
 
 export default class YoutubePlayer {
 	private playing: boolean = false;

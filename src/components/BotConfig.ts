@@ -1,12 +1,7 @@
-import deepmerge from "deepmerge";
 import MusicBot from "../MusicBot";
 import discord from 'discord.js';
-import fs from 'fs';
-import moment from "moment";
 import debug from "debug";
 import FileSystem from "../utils/FileSystem";
-
-type AppEnvironment = 'production' | 'development';
 
 export interface IBotConfig {
 	version: string,

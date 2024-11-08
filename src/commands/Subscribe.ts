@@ -1,4 +1,4 @@
-import { ActionRowBuilder, AutocompleteInteraction, ButtonInteraction, CacheType, channelMention, ChannelSelectMenuBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, StringSelectMenuBuilder } from "discord.js";
+import { ActionRowBuilder, AutocompleteInteraction, ButtonInteraction, CacheType, channelMention, ChannelSelectMenuBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import MusicSession from "../components/MusicSession";

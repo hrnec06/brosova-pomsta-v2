@@ -1,8 +1,6 @@
-import { ActionRowBuilder, BaseSelectMenuBuilder, ButtonBuilder, EmbedBuilder, SlashCommandBuilder, SlashCommandSubcommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
-import Utils from "../utils";
-import { v4 as uuidv4} from 'uuid';
 
 interface ConfigSession {
     id: string,

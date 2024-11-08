@@ -1,5 +1,5 @@
 import MusicBot from "../MusicBot";
-import ytdl, { validateURL } from "@distube/ytdl-core";
+import ytdl from "@distube/ytdl-core";
 import Utils from "../utils";
 
 export default class YoutubeAPI {

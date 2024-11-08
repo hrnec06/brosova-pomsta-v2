@@ -1,11 +1,10 @@
-import { ActionRowBuilder, AutocompleteInteraction, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, Channel, codeBlock, Embed, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, PermissionsBitField, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ActionRowBuilder, AutocompleteInteraction, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, Channel, codeBlock, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, PermissionsBitField, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import moment from "moment";
 import Utils from "../utils";
 import MusicSession from "../components/MusicSession";
 import { v4 as uuidv4} from 'uuid';
-import path from "path";
 import FileSystem from "../utils/FileSystem";
 import debug from "debug";
 import assert from "node:assert";

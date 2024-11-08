@@ -1,9 +1,7 @@
 import { ActionRowBuilder, EmbedBuilder, hyperlink, RGBTuple } from "@discordjs/builders";
 import MusicBot from "../MusicBot";
-import { error } from "console";
 import Utils from "../utils";
-import discord, { Embed } from 'discord.js';
-import assert from "node:assert";
+import discord from 'discord.js';
 
 type EmbedColors = 'success' | 'error';
 interface EmbedOptions {

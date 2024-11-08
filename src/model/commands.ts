@@ -1,7 +1,6 @@
-import discord, { Interaction, SharedSlashCommand, SlashCommandBuilder } from "discord.js";
+import discord from "discord.js";
 import MusicSession from "../components/MusicSession";
 import debug from "debug";
-import Utils from "../utils";
 
 export type MusicBotCommand = DiscordCommand & DiscordCommandInterface;
 
