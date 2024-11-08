@@ -67,12 +67,12 @@ export interface DiscordCommandInterface {
 
 
 class PathSwitch {
-	private actionList: Record<string, PathSwitchAction> = {}
+	private actionList: Record<string, PathSwitchAction<any, boolean>> = {}
 	private idList: Record<string, (() => Promise<void> | void)> = {};
 	private _default?: (() => Promise<void> | void);
 
-	public action(action: string, callback: (action: PathSwitchAction) => PathSwitchAction) {
-		this.actionList[action] = callback(new PathSwitchAction());
+	public action<T>(action: string, callback: (action: PathSwitchAction<T, false>) => PathSwitchAction<T, boolean>) {
+		this.actionList[action] = callback(new PathSwitchAction<T, false>());
 		return this;
 	}
 
@@ -103,28 +103,36 @@ class PathSwitch {
 	}
 }
 
-class PathSwitchAction {
-	private idList: Record<string, () => Promise<void> | void> = {};
-	private _default?: (() => Promise<void> | void);
+class PathSwitchAction<T, U extends boolean> {
+	private _use?: ((id: string) => Promise<T> | T);
+	private idList: Record<string, (context: U extends true ? T : undefined) => Promise<void> | void> = {};
+	private _default?: ((context: U extends true ? T : undefined) => Promise<void> | void);
 
-	public id(id: string, callback: (() => Promise<void> | void)) {
+	public use(callback: ((id: string) => Promise<T> | T)): PathSwitchAction<T, true> {
+		this._use = callback;
+		return this as PathSwitchAction<T, true>;
+	}
+
+	public id(id: string, callback: ((context: U extends true ? T : undefined) => Promise<void> | void)): PathSwitchAction<T, U> {
 		this.idList[id] = callback;
 		return this;
 	}
 
-	public default(callback: (() => Promise<void> | void)) {
+	public default(callback: (() => Promise<void> | void)): PathSwitchAction<T, U> {
 		this._default = callback;
 		return this;
 	}
 
 	public async run(path: ComponentPath): Promise<boolean> {
 		const idCallback = this.idList[path.id];
+		const ctx = this._use ? (await this._use(path.id)) : undefined;
+
 		if (idCallback != undefined) {
-			await idCallback();
+			await idCallback(ctx as U extends true ? T : undefined);
 			return true;
 		}
 		else if (this._default) {
-			await this._default();
+			await this._default(ctx as U extends true ? T : undefined);
 			return true;
 		}
 		return false;
