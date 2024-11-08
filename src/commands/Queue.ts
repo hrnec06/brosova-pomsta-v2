@@ -470,7 +470,7 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 
 		const confirmButton = new ButtonBuilder()
 			.setCustomId(this.makePath('confirm', 'remove'))
-			.setEmoji('1301644179474223134')
+			.setEmoji('1304529308332855337')
 			.setStyle(ButtonStyle.Success)
 
 		const revertButton = new ButtonBuilder()
@@ -491,18 +491,18 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 		const buttonPrev = new ButtonBuilder()
 			.setCustomId(this.makePath('prev', 'list'))
 			.setDisabled(page <= 0)
-			.setEmoji('◀')
+			.setEmoji('1304529878259073054')
 			.setStyle(ButtonStyle.Primary)
 
 		const buttonNext = new ButtonBuilder()
 			.setCustomId(this.makePath('next', 'list'))
 			.setDisabled(page >= maxPage - 1)
-			.setEmoji('▶')
+			.setEmoji('1304529852962967574')
 			.setStyle(ButtonStyle.Primary)
 
 		const buttonClose = new ButtonBuilder()
 			.setCustomId(this.makePath('close', 'list'))
-			.setEmoji('1300533556287897700')
+			.setEmoji('1304529399718084608')
 			.setStyle(ButtonStyle.Danger)
 
 		const actionRow = new ActionRowBuilder<ButtonBuilder>()
