@@ -52,9 +52,9 @@ export default abstract class DiscordCommand {
 		return `${base}.${id}`;
 	}
 
-	protected pathSwitch(path: ComponentPath, pathSwitchCallback: (pathSwitch: PathSwitch) => PathSwitch) {
+	protected async pathSwitch(path: ComponentPath, pathSwitchCallback: (pathSwitch: PathSwitch) => PathSwitch) {
 		const pathSwitch = pathSwitchCallback(new PathSwitch());
-		pathSwitch.run(path);
+		await pathSwitch.run(path);
 	}
 }
 
@@ -68,63 +68,63 @@ export interface DiscordCommandInterface {
 
 class PathSwitch {
 	private actionList: Record<string, PathSwitchAction> = {}
-	private idList: Record<string, () => void> = {};
-	private _default?: () => void;
+	private idList: Record<string, (() => Promise<void> | void)> = {};
+	private _default?: (() => Promise<void> | void);
 
 	public action(action: string, callback: (action: PathSwitchAction) => PathSwitchAction) {
 		this.actionList[action] = callback(new PathSwitchAction());
 		return this;
 	}
 
-	public id(id: string, callback: () => void) {
+	public async id(id: string, callback: (() => Promise<void>)) {
 		this.idList[id] = callback;
 		return this;
 	}
 
-	public default(callback: () => void) {
+	public default(callback: (() => Promise<void> | void)) {
 		this._default = callback;
 		return this;
 	}
 
-	public run(path: ComponentPath) {
-		var matchingId: (() => void) | undefined;
+	public async run(path: ComponentPath) {
+		var matchingId: (() => Promise<void> | void) | undefined;
 
 		if (path.action != undefined && this.actionList[path.action]) {
-			const handled = this.actionList[path.action].run(path);
+			const handled = await this.actionList[path.action].run(path);
 			if (!handled && this._default)
-				this._default();
+				await this._default();
 		}
 		else if (path.action == undefined && (matchingId = this.idList[path.id]) != undefined) {
-			matchingId();
+			await matchingId();
 		}
 		else if (this._default) {
-			this._default();
+			await this._default();
 		}
 	}
 }
 
 class PathSwitchAction {
-	private idList: Record<string, () => void> = {};
-	private _default?: () => void;
+	private idList: Record<string, () => Promise<void> | void> = {};
+	private _default?: (() => Promise<void> | void);
 
-	public id(id: string, callback: () => void) {
+	public id(id: string, callback: (() => Promise<void> | void)) {
 		this.idList[id] = callback;
 		return this;
 	}
 
-	public default(callback: () => void) {
+	public default(callback: (() => Promise<void> | void)) {
 		this._default = callback;
 		return this;
 	}
 
-	public run(path: ComponentPath): boolean {
+	public async run(path: ComponentPath): Promise<boolean> {
 		const idCallback = this.idList[path.id];
 		if (idCallback != undefined) {
-			idCallback();
+			await idCallback();
 			return true;
 		}
 		else if (this._default) {
-			this._default();
+			await this._default();
 			return true;
 		}
 		return false;
