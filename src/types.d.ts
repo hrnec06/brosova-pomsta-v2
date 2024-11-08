@@ -7,6 +7,8 @@ declare type DiscordButtonInteraction 			= import('discord.js').ButtonInteractio
 declare type DiscordAutocompleteInteraction 	= import('discord.js').AutocompleteInteraction<DiscordCacheType>;
 declare type DiscordModalInteraction			= import('discord.js').ModalSubmitInteraction<DiscordCacheType>;
 
+declare type Promisable<T> = T | Promise<T>;
+
 // Queue
 declare interface UserDetails {
 	id: string,
