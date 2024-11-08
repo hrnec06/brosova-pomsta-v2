@@ -40,7 +40,7 @@ export default class SessionManager {
 	getSession(guild: discord.Guild): MusicSession | null;
 	public getSession(arg1: DiscordInteraction | discord.Guild) {
 		const guild = arg1 instanceof discord.Guild ? arg1 : arg1.guild;
-		const session = Utils.findValue(this.sessions, (_id, session) => session.guild.id === guild.id);
+		const session = Utils.findValue(this.sessions, (_id, session) => session.guild.id === guild?.id);
 
 		return session || null;
 	}

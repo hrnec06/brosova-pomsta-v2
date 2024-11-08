@@ -64,6 +64,15 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 	}
 
 	public async play(interaction: DiscordChatInteraction, query: string, playNow: boolean): Promise<boolean> {
+		if (!Utils.BotUtils.isValidMember(interaction.member)) {
+			this.client.handleError('Invalid member', interaction);
+			return false;
+		}
+		if (!interaction.guild) {
+			this.client.handleError('Invalid guild.', interaction);
+			return false;
+		}
+
 		const voiceChannel = interaction.member.voice.channel;
 
 		if (!voiceChannel) {
@@ -73,18 +82,18 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 		}
 
 		const interactionChannel = interaction.channel;
-		if (!interactionChannel) {
+		if (!interactionChannel || !interactionChannel.isSendable()) {
 			const embed = this.client.interactionManager.generateErrorEmbed("Neplatný textový channel.");
 			interaction.reply({ embeds: [embed], ephemeral: true });
 			return false;
 		}
-		
+
 		try {
 			await interaction.deferReply();
 
 			var session = this.client.getSessionManager().getSession(interaction.guild);
 			if (!session) {
-				session = this.client.getSessionManager().createSession(interaction.guild, interaction.channel, interaction.user);
+				session = this.client.getSessionManager().createSession(interaction.guild, interactionChannel, interaction.user);
 				this.client.log.write('Create session: ', interaction.user.displayName);
 			}
 

@@ -21,6 +21,10 @@ export default class LoopCommand extends DiscordCommand implements DiscordComman
 	}
 
 	public dispatch(interaction: DiscordChatInteraction) {
+		if (!Utils.BotUtils.isValidMember(interaction.member)) {
+			this.client.handleError('Invalid member', interaction);
+			return false;
+		}
 		const voiceChannel = interaction.member.voice.channel;
 
 		if (!voiceChannel) {

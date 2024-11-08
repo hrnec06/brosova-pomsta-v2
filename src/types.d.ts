@@ -1,7 +1,11 @@
 // discord.js
 
-declare type DiscordInteraction = import('discord.js').Interaction<CacheType>;
-declare type DiscordChatInteraction = import('discord.js').ChatInputCommandInteraction<discord.CacheType>;
+type DiscordCacheType = import('discord.js').CacheType;
+declare type DiscordInteraction 					= import('discord.js').Interaction<DiscordCacheType>;
+declare type DiscordChatInteraction 			= import('discord.js').ChatInputCommandInteraction<DiscordCacheType>;
+declare type DiscordButtonInteraction 			= import('discord.js').ButtonInteraction<DiscordCacheType>;
+declare type DiscordAutocompleteInteraction 	= import('discord.js').AutocompleteInteraction<DiscordCacheType>;
+declare type DiscordModalInteraction			= import('discord.js').ModalSubmitInteraction<DiscordCacheType>;
 
 // Queue
 declare interface UserDetails {

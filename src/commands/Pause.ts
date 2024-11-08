@@ -2,6 +2,7 @@ import { ActionRowBuilder, AutocompleteInteraction, ButtonBuilder, ButtonInterac
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
 import MusicSession from "../components/MusicSession";
+import Utils from "../utils";
 
 export default class PauseCommand extends DiscordCommand implements DiscordCommandInterface {
 	constructor(private client: MusicBot, commandName: string, description: string, private setter: boolean) {
@@ -12,6 +13,10 @@ export default class PauseCommand extends DiscordCommand implements DiscordComma
 		)
 	}
 	public async dispatch(interaction: DiscordChatInteraction, session: MusicSession | null) {
+		if (!Utils.BotUtils.isValidMember(interaction.member)) {
+			this.client.handleError('Invalid member', interaction);
+			return false;
+		}
 		const voiceChannel = interaction.member.voice.channel;
 
 		if (!voiceChannel) {

@@ -1,6 +1,7 @@
 import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
+import Utils from "../utils";
 
 export default class JoinCommand extends DiscordCommand implements DiscordCommandInterface {
 	constructor(private client: MusicBot) {
@@ -11,7 +12,16 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 		)
 	}
 	public async dispatch(interaction: DiscordChatInteraction) {
+		if (!Utils.BotUtils.isValidMember(interaction.member)) {
+			this.client.handleError('Invalid member', interaction);
+			return false;
+		}
 		const voiceChannel = interaction.member.voice.channel;
+
+		if (!interaction.guild) {
+			this.client.handleError('Invalid guild.', interaction);
+			return false;
+		}
 
 		if (!voiceChannel) {
 			const embed = this.client.interactionManager.generateErrorEmbed("Nejsi připojen do žádného kanálu!");
@@ -20,7 +30,7 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 		}
 
 		const interactionChannel = interaction.channel;
-		if (!interactionChannel) {
+		if (!interactionChannel || !interactionChannel.isSendable()) {
 			const embed = this.client.interactionManager.generateErrorEmbed("Neplatný textový channel.");
 			interaction.reply({ embeds: [embed], ephemeral: true });
 			return false;
@@ -29,7 +39,7 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 		try {
 			let session = this.client.getSessionManager().getSession(interaction);
 			if (!session) {
-				session = this.client.getSessionManager().createSession(interaction.guild, interaction.channel, interaction.user);
+				session = this.client.getSessionManager().createSession(interaction.guild, interactionChannel, interaction.user);
 				this.client.log.write('Creating session: ', interaction.user.displayName);
 			}
 

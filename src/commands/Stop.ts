@@ -1,6 +1,7 @@
 import discord, { SlashCommandBuilder } from "discord.js";
 import DiscordCommand, { DiscordCommandInterface } from "../model/commands";
 import MusicBot from "../MusicBot";
+import Utils from "../utils";
 
 export default class StopComamnd extends DiscordCommand implements DiscordCommandInterface {
 	constructor(private client: MusicBot) {
@@ -12,6 +13,10 @@ export default class StopComamnd extends DiscordCommand implements DiscordComman
 	}
 
 	public dispatch(interaction: DiscordChatInteraction) {
+		if (!Utils.BotUtils.isValidMember(interaction.member)) {
+			this.client.handleError('Invalid member', interaction);
+			return false;
+		}
 		const voiceChannel = interaction.member.voice.channel;
 
 		if (!voiceChannel) {

@@ -126,6 +126,11 @@ export default class QueueCommand extends DiscordCommand implements DiscordComma
 	 * Handle interaction
 	 */
 	public async dispatch(interaction: DiscordChatInteraction, session: MusicSession | null) {
+		if (!Utils.BotUtils.isValidMember(interaction.member)) {
+			this.client.handleError('Invalid member.', interaction);
+			return false;
+		}
+
 		const voiceChannel = interaction.member.voice.channel;
 
 		if (!voiceChannel) {
