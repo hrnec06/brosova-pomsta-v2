@@ -100,7 +100,7 @@ export default abstract class FileSystem<T extends (Array<any> | Record<any, any
 				this.debugger("File '%s' doesn't exist! Creating a new one.", this.fileName);
 				return true;
 			}
-			this.debugger(`Saving '%s' file.`, this.fileName);
+
 			await fs.promises.writeFile(this.directory, JSON.stringify(data), {encoding: 'utf-8'});
 
 			this.data = data;
