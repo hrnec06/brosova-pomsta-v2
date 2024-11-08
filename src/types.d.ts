@@ -6,6 +6,7 @@ declare type DiscordChatInteraction 			= import('discord.js').ChatInputCommandIn
 declare type DiscordButtonInteraction 			= import('discord.js').ButtonInteraction<DiscordCacheType>;
 declare type DiscordAutocompleteInteraction 	= import('discord.js').AutocompleteInteraction<DiscordCacheType>;
 declare type DiscordModalInteraction			= import('discord.js').ModalSubmitInteraction<DiscordCacheType>;
+declare type DiscordSelectInteraction			= import('discord.js').AnySelectMenuInteraction<DiscordCacheType>;
 
 declare type Promisable<T> = T | Promise<T>;
 

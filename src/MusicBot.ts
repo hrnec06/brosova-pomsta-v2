@@ -22,17 +22,19 @@ import QueueCommand from './commands/Queue';
 import debug from 'debug';
 import { QueueCacheManager } from './components/MusicQueue';
 import PauseCommand from './commands/Pause';
+import SubscribeCommand from './commands/Subscribe';
+import UnsubscribeCommand from './commands/Unsubscribe';
 
 type BotEnvironment = 'production' | 'development';
 
-type MusicBotEvents = "load" | 'buttonInteraction' | 'stringSelectInteraction' | 'autocompleteInteraction' | 'configLoad';
+type MusicBotEvents = "load" | 'buttonInteraction' | 'selectInteraction' | 'autocompleteInteraction' | 'configLoad';
 
 interface MusicBotEventsMap extends Record<MusicBotEvents, any> {
 	'load': 								discord.Client,
 	'configLoad': 						IBotConfig,
-	'buttonInteraction': 			discord.ButtonInteraction<discord.CacheType>,
-	'stringSelectInteraction': 	discord.StringSelectMenuInteraction<discord.CacheType>,
-	'autocompleteInteraction': 	discord.AutocompleteInteraction<discord.CacheType>
+	'buttonInteraction': 			DiscordButtonInteraction,
+	'selectInteraction': 			DiscordSelectInteraction,
+	'autocompleteInteraction': 	DiscordAutocompleteInteraction
 }
 
 export default class MusicBot {
@@ -96,7 +98,9 @@ export default class MusicBot {
 			new AdminCommand(this),
 			new QueueCommand(this),
 			new PauseCommand(this, 'pause', 'Zastaví přehrávání', true),
-			new PauseCommand(this, 'unpause', 'Odzastaví přehrávání', false)
+			new PauseCommand(this, 'unpause', 'Odzastaví přehrávání', false),
+			new SubscribeCommand(this),
+			new UnsubscribeCommand(this)
 			// new ConfigCommand(this)
 		];
 
@@ -257,8 +261,18 @@ export default class MusicBot {
 			this.emit('buttonInteraction', interaction);
 		}
 		// Select menu
-		else if (interaction.isStringSelectMenu()) {
-			this.emit("stringSelectInteraction", interaction);
+		else if (interaction.isAnySelectMenu()) {
+			const path = this.parsePath(interaction.customId);
+
+			if (path && (command = this.getCommand(path.commandName)) != null && command.onSelect) {
+				try {
+					command.onSelect(interaction, path, session);
+				} catch (err) {
+					this.handleError(err);
+				}
+			}
+
+			this.emit("selectInteraction", interaction);
 		}
 		// Autocomplete
 		else if (interaction.isAutocomplete()) {

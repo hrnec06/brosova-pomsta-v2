@@ -9,6 +9,7 @@ type OnRunCallback = (interaction: DiscordChatInteraction, session: MusicSession
 type OnAutocompleteCallback = (interaction: DiscordAutocompleteInteraction, session: MusicSession | null) => discord.ApplicationCommandOptionChoiceData[] | Promise<discord.ApplicationCommandOptionChoiceData[]>;
 type OnButtonCallback = (interaction: DiscordButtonInteraction, path: ComponentPath, session: MusicSession | null) => void;
 type OnModalCallback = (interaction: DiscordModalInteraction, path: ComponentPath, session: MusicSession | null) => void;
+type OnSelectCallback = (interaction: DiscordSelectInteraction, path: ComponentPath, session: MusicSession | null) => void;
 
 export default abstract class DiscordCommand {
 	public valid: 						boolean;
@@ -62,7 +63,8 @@ export interface DiscordCommandInterface {
 	dispatch: OnRunCallback,
 	onAutoComplete?: OnAutocompleteCallback,
 	onButton?: OnButtonCallback,
-	onModal?: OnModalCallback
+	onModal?: OnModalCallback,
+	onSelect?: OnSelectCallback
 }
 
 
