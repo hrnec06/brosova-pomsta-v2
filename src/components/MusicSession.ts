@@ -92,6 +92,12 @@ export default class MusicSession {
 			try {
 				assert(this.channel != undefined, 'Cannot join channel because it\'s undefined.');
 
+				setTimeout(() => {
+					if (this.joining && !this.joined) {
+						error('Timed out.');
+					}
+				}, 10000);
+
 				// Clear old connections
 				this.connection?.destroy();
 				this.player?.stop(true);
