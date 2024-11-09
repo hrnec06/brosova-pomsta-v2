@@ -110,6 +110,10 @@ export default class MusicSession {
 					adapterCreator: this.channel.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator
 				});
 
+				connection.on('error', (err) => {
+					console.error(err);
+				})
+
 				connection.on(VoiceConnectionStatus.Ready, () => {
 					this.joined = true;
 					this.joining = false;
