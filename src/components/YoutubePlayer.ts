@@ -239,11 +239,18 @@ export default class YoutubePlayer {
 
 		const audio = ytdl(queuedVideo.videoDetails.videoId, {
 			quality: 'highestaudio',
+			filter: 'audioonly',
 			agent: ytdlAgent,
-			highWaterMark: 1 << 62,
-			liveBuffer: 1 << 62,
-			dlChunkSize: 0
+			highWaterMark: 16384,
+			dlChunkSize: 65536,
 		});
+		// const audio = ytdl(queuedVideo.videoDetails.videoId, {
+		// 	quality: 'highestaudio',
+		// 	agent: ytdlAgent,
+		// 	highWaterMark: 1 << 62,
+		// 	liveBuffer: 1 << 62,
+		// 	dlChunkSize: 0
+		// });
 
 		const { stream, type } = await demuxProbe(audio);
 
