@@ -1,13 +1,14 @@
 import MusicBot from "../MusicBot";
 import ytdl from "@distube/ytdl-core";
 import Utils from "../utils";
+import { ytdlAgent } from "../components/YoutubePlayer";
 
 export default class YoutubeAPI {
 	constructor(private client: MusicBot, private GOOGLE_API_KEY?: string) {
 	}
 
 	public async getVideoDataByID(id: string) {
-		const videoInfo = await ytdl.getInfo(id);
+		const videoInfo = await ytdl.getInfo(id, {agent: ytdlAgent});
 
 		const thumbnail = videoInfo.videoDetails.thumbnails[videoInfo.videoDetails.thumbnails.length - 1].url;
 		const authorAvatar = videoInfo.videoDetails.author.thumbnails != undefined ? videoInfo.videoDetails.author.thumbnails[videoInfo.videoDetails.author.thumbnails.length - 1].url : undefined;
