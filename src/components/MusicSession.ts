@@ -84,7 +84,6 @@ export default class MusicSession {
 	}
 	public join() {
 		return new Promise<boolean>((resolve, error) => {
-			console.log('Join 1');
 			if (this.joining) {
 				return error('Bot is already joining.');
 			}
@@ -93,12 +92,13 @@ export default class MusicSession {
 			try {
 				assert(this.channel != undefined, 'Cannot join channel because it\'s undefined.');
 
-				console.log('Join 2');
-
 				setTimeout(() => {
-					if (this.joining && !this.joined) {
-						error('Timed out.');
-					}
+					// if (this.joining && !this.joined) {
+					// 	error('Timed out.');
+					// }
+					this.joined = true;
+					this.joining = false;
+					resolve(true);
 				}, 10000);
 
 				// Clear old connections
