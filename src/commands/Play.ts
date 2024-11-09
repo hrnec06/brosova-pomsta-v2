@@ -133,7 +133,6 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 				// const result = await session.getQueue().pushToQueue(queuedPlaylist, playNow, interaction);
 			} else {
 				const videoID = await this.client.youtubeAPI.getVideoIDByQuery(query);
-
 				if (!videoID) {
 					const embed = this.client.interactionManager.generateErrorEmbed(`Video "${query}" nebylo nazeleno.`);
 					interaction.followUp({ embeds: [embed], ephemeral: true });
