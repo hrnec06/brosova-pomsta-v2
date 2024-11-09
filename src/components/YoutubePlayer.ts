@@ -268,6 +268,8 @@ export default class YoutubePlayer {
 		conn.subscribe(player);
 
 		this.playing = true;
+
+		console.log('PLAYING');
 	}
 
 	public async handleEnd(forced: boolean = false) {
