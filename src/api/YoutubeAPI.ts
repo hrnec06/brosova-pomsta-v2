@@ -8,7 +8,17 @@ export default class YoutubeAPI {
 	}
 
 	public async getVideoDataByID(id: string) {
-		const videoInfo = await ytdl.getInfo(id, {agent: ytdlAgent});
+		const videoInfo = await ytdl.getInfo(
+			id,
+			{
+				agent: ytdlAgent,
+				requestOptions: {
+					headers: {
+						'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+					}
+				}
+			}
+		);
 
 		const thumbnail = videoInfo.videoDetails.thumbnails[videoInfo.videoDetails.thumbnails.length - 1].url;
 		const authorAvatar = videoInfo.videoDetails.author.thumbnails != undefined ? videoInfo.videoDetails.author.thumbnails[videoInfo.videoDetails.author.thumbnails.length - 1].url : undefined;

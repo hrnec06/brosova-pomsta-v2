@@ -243,6 +243,11 @@ export default class YoutubePlayer {
 			agent: ytdlAgent,
 			highWaterMark: 16384,
 			dlChunkSize: 65536,
+			requestOptions: {
+				headers: {
+					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+				}
+			}
 		});
 		// const audio = ytdl(queuedVideo.videoDetails.videoId, {
 		// 	quality: 'highestaudio',
