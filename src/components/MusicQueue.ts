@@ -251,6 +251,7 @@ export class QueueCacheManager {
 	}
 
 	public static async clearOldCache() {
+		if (!fs.existsSync(QueueCacheManager.CACHE_DIRECTORY)) return;
 		const dateNow = Date.now();
 
 		try {
