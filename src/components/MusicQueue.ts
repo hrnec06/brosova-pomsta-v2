@@ -71,7 +71,7 @@ export default class MusicQueue {
 		
 		console.log('1');
 		if (!this.session.isJoined()) {
-			const r = await this.session.join();
+			const r = this.session.join();
 			if (!r) throw 'Bot nelze připojit na server.';
 		}
 
