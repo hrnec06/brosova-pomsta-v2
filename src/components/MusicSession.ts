@@ -84,6 +84,7 @@ export default class MusicSession {
 	}
 	public join() {
 		return new Promise<boolean>((resolve, error) => {
+			console.log('Join 1');
 			if (this.joining) {
 				return error('Bot is already joining.');
 			}
@@ -91,6 +92,8 @@ export default class MusicSession {
 
 			try {
 				assert(this.channel != undefined, 'Cannot join channel because it\'s undefined.');
+
+				console.log('Join 2');
 
 				setTimeout(() => {
 					if (this.joining && !this.joined) {
@@ -114,6 +117,9 @@ export default class MusicSession {
 					console.error(err);
 				})
 
+				connection.on('stateChange', (_, newState) => {
+					console.log(newState);
+				})
 				connection.on(VoiceConnectionStatus.Ready, () => {
 					this.joined = true;
 					this.joining = false;
@@ -141,7 +147,10 @@ export default class MusicSession {
 				});
 
 				this.connection = connection;
+
+				console.log('Join 3');
 			} catch (err) {
+				console.log('Join err');
 				error(err);
 				this.joining = false;
 				this.joined = false;
