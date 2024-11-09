@@ -262,23 +262,11 @@ export default class YoutubePlayer {
 
 		const audio = ytdl(queuedVideo.videoDetails.videoId, {
 			quality: 'highestaudio',
-			filter: 'audioonly',
 			agent: ytdlAgent,
-			highWaterMark: 16384,
-			dlChunkSize: 65536,
-			requestOptions: {
-				headers: {
-					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
-				}
-			}
+			highWaterMark: 1 << 62,
+			liveBuffer: 1 << 62,
+			dlChunkSize: 0,
 		});
-		// const audio = ytdl(queuedVideo.videoDetails.videoId, {
-		// 	quality: 'highestaudio',
-		// 	agent: ytdlAgent,
-		// 	highWaterMark: 1 << 62,
-		// 	liveBuffer: 1 << 62,
-		// 	dlChunkSize: 0
-		// });
 
 		const { stream, type } = await demuxProbe(audio);
 
@@ -303,8 +291,6 @@ export default class YoutubePlayer {
 		conn.subscribe(player);
 
 		this.playing = true;
-
-		console.log('PLAYING');
 	}
 
 	public async handleEnd(forced: boolean = false) {

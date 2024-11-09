@@ -69,18 +69,15 @@ export default class MusicQueue {
 
 		this.cacheManager.update();
 		
-		console.log('1');
 		if (!this.session.isJoined()) {
 			const r = await this.session.join();
 			if (!r) throw 'Bot nelze připojit na server.';
 		}
 
-		console.log('2');
 		playNow = playNow || this.isPlayerAvailable();
 		if (playNow) {
 			this.position = this.getQueueAsArray().length - 1;
 			await this.playActiveVideo(Utils.BotUtils.isPlaylistItem(item) ? item : undefined, false, interaction);
-			console.log('3');
 			return true;
 		}
 		return false;
