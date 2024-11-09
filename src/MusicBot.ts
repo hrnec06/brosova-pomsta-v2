@@ -51,7 +51,7 @@ export default class MusicBot {
 	public 	interactionManager: 	InteractionManager;
 	private 	sessionManager: 		SessionManager;
 	public 	youtubeAPI: 			YoutubeAPI;
-	public 	log: 						Log;
+	public 	log: 						Log | undefined = undefined; // temporary disabled
 
 	public 	loopingDisabled: 		boolean = 	false;
 
@@ -76,7 +76,7 @@ export default class MusicBot {
 		// Init managers
 		this.youtubeAPI = 			new YoutubeAPI(this, GOOGLE_API_KEY);
 		this.config = 					new BotConfig(this);
-		this.log = 						new Log(this);
+		// this.log = 						new Log(this);
 		this.interactionManager = 	new InteractionManager(this);
 		this.sessionManager = 		new SessionManager(this);
 

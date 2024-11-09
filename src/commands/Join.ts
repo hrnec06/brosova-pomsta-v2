@@ -40,7 +40,7 @@ export default class JoinCommand extends DiscordCommand implements DiscordComman
 			let session = this.client.getSessionManager().getSession(interaction);
 			if (!session) {
 				session = this.client.getSessionManager().createSession(interaction.guild, interactionChannel, interaction.user);
-				this.client.log.write('Creating session: ', interaction.user.displayName);
+				// this.client.log.write('Creating session: ', interaction.user.displayName);
 			}
 
 			if (voiceChannel.id == session.getVoiceChannel()?.id) {

@@ -93,7 +93,7 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 			var session = this.client.getSessionManager().getSession(interaction.guild);
 			if (!session) {
 				session = this.client.getSessionManager().createSession(interaction.guild, interactionChannel, interaction.user);
-				this.client.log.write('Create session: ', interaction.user.displayName);
+				// this.client.log.write('Create session: ', interaction.user.displayName);
 			}
 
 			var itemToQueue: QueuedItem;
@@ -101,7 +101,7 @@ export default class PlayCommand extends DiscordCommand implements DiscordComman
 			var playlistID: string | null;
 			if ((playlistID = this.client.youtubeAPI.getPlaylistIdFromURL(query)) != null) {
 				// Is playlist
-				this.client.log.write('Query is playlist: ', true);
+				// this.client.log.write('Query is playlist: ', true);
 
 				const details = await this.client.youtubeAPI.fetchPlaylistDetails(playlistID);
 				if (!details) {
