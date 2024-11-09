@@ -19,8 +19,6 @@ const ENVIRONMENT = process.env.ENVIRONMENT;
 if (!ENVIRONMENT) throw 'ENVIRONMENT wasn\'t specified in .env';
 if (ENVIRONMENT != 'production' && ENVIRONMENT != 'development') throw `ENVIRONMENT must be 'production' or 'development'. Got ${ENVIRONMENT}.`;
 
-console.log(generateDependencyReport());
-
 
 const client = new MusicBot(
 	BOT_TOKEN,

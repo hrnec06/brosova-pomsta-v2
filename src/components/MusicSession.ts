@@ -93,12 +93,9 @@ export default class MusicSession {
 				assert(this.channel != undefined, 'Cannot join channel because it\'s undefined.');
 
 				setTimeout(() => {
-					// if (this.joining && !this.joined) {
-					// 	error('Timed out.');
-					// }
-					this.joined = true;
-					this.joining = false;
-					resolve(true);
+					if (this.joining && !this.joined) {
+						error('Timed out.');
+					}
 				}, 10000);
 
 				// Clear old connections
@@ -118,9 +115,10 @@ export default class MusicSession {
 				})
 
 				connection.on('stateChange', (_, newState) => {
-					console.log(newState);
+					console.log(newState.status);
 				})
 				connection.on(VoiceConnectionStatus.Ready, () => {
+					console.log('JOINED!!!');
 					this.joined = true;
 					this.joining = false;
 					resolve(true);
