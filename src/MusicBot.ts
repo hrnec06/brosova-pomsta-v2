@@ -36,7 +36,7 @@ interface MusicBotEventsMap extends Record<MusicBotEvents, any> {
 }
 
 export default class MusicBot {
-	public 	readonly BOT_VERSION: 	string = 	'2.2.1';
+	public 	readonly BOT_VERSION: 	string = 	'2.3.0';
 	public 	readonly ENVIRONMENT: BotEnvironment;
 
 	private 	debugger 					= debug('bp:core');

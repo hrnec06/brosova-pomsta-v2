@@ -26,7 +26,7 @@ export default class SubscribeCommand extends DiscordCommand implements DiscordC
 			.setPlaceholder('Vyberte kanál!')
 			.setMaxValues(1)
 			.setMinValues(1)
-			.addChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.AnnouncementThread])
+			.setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.AnnouncementThread])
 
 		const actionRow = new ActionRowBuilder<ChannelSelectMenuBuilder>()
 			.addComponents(select);
